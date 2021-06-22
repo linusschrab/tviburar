@@ -4,7 +4,7 @@ local music = require("musicutil")
 local m = midi.connect(1)
  
 local lat = lattice:new()
-local LFO_SHAPES = {"square", "sine", "triangle", "random"}
+local LFO_SHAPES = {"mute", "square", "sine", "triangle", "random"}
 local SCALES = {}
 for i = 1, #music.SCALES do
   table.insert(SCALES, string.lower(music.SCALES[i].name))
@@ -33,8 +33,8 @@ local lfo_counter = {
 }
  
 local div = {
-  names = {"2x", "1x", "1/2", "1/4", "1/8", "1/16", "1/32"},
-  options = {2,1,1/2,1/4,1/8,1/16,1/32}
+  names = {"4x", "3x", "2x", "1x", "1/2", "1/3", "1/4", "1/6", "1/8", "1/12", "1/16", "1/24", "1/32"},
+  options = {4, 3, 2, 1, 1/2, 1/3, 1/4, 1/6, 1/8, 1/12, 1/16, 1/24, 1/3}
 }
  
 local screen_dirty = false
@@ -64,7 +64,15 @@ end
  
 function init_params()
 
-  params:add_option("twinout", "twinoutput", {"midi", "crow "})
+  params:add_option("twin1out", "twin 1 output", {"midi", "crow 1/2"})
+  params:add_option("twin2out", "twin 2 output", {"midi", "crow 3/4"})
+  params:add_number("mididevice","midi device",1,#midi.vports,1)
+  params:set_action("mididevice", function (x)
+    m = midi.connect(x)
+  end)
+  params:add_number("midi_ch_1","midi ch twin 1",1,#midi.vports,1)
+  params:add_number("midi_ch_2","midi ch twin 2",1,#midi.vports,1)
+  
 
   params:add_option("scale","scale",SCALES,1)
   params:set_action("scale", function (x) 
@@ -72,24 +80,24 @@ function init_params()
   end)
   params:add_option("root_note", "root note", music.note_nums_to_names({0,1,2,3,4,5,6,7,8,9,10,11}),1)
   for i=1,2 do
-    params:add_option("twin"..i.."div", "twin "..i.." division", div.names, 4)
+    params:add_option("twin"..i.."div", "twin "..i.." division", div.names, 7)
     params:set_action("twin"..i.."div", function(x)
       twin[i]:set_division(div.options[x])
     end)
   end
   for i=1,2 do
     for j=1,4 do
-      params:add_option("twin"..i.."lfo"..j.."shape", "twin "..i.." lfo "..j.." shape",LFO_SHAPES,4)
+      params:add_option("twin"..i.."lfo"..j.."shape", "twin "..i.." lfo "..j.." shape",LFO_SHAPES,2)
     end
   end
   for i=1,2 do
     for j=1,4 do
-      params:add_control("twin"..i.."lfo"..j.."rate", "twin "..i.." lfo "..j.." rate", controlspec.new(0.1,50,"lin",0.001,math.random(1, 30)/10,"hz",1/10000))
+      params:add_control("twin"..i.."lfo"..j.."rate", "twin "..i.." lfo "..j.." rate", controlspec.new(0.01,50,"lin",0.01,math.random(1, 30)/10,"hz",1/1000))
     end
   end
   for i=1,2 do
     for j=1,4 do
-      params:add_number("twin"..i.."lfo"..j.."off","twin "..i.." lfo offset "..j,-3,3,0)
+      params:add_number("twin"..i.."lfo"..j.."off","twin "..i.." lfo oct off "..j,-3,3,0)
     end
   end
   for i=1,2 do
@@ -108,6 +116,8 @@ function count_and_act()
   for i=1,2 do
     --square
     if params:get("twin"..i.."lfo"..twinstep[i].."shape") == 1 then
+      --do nothing
+    elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 2 then
       if lfo_counter[i][twinstep[i]] >= LFO_RES / (2*params:get("twin"..i.."lfo"..twinstep[i].."rate")) then
         twin_lfo_value[i][twinstep[i]] = twin_lfo_value[i][twinstep[i]] * -1
         play_lfo(math.floor(twin_lfo_value[i][twinstep[i]] + params:get("twin"..i.."lfo"..twinstep[i].."amp")) * 12 + 12*params:get("twin"..i.."lfo"..twinstep[i].."off"), i)
@@ -115,7 +125,7 @@ function count_and_act()
       end
 
     --sine
-    elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 2 then
+    elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 3 then
       twin_lfo_value[i][twinstep[i]] = params:get("twin"..i.."lfo"..twinstep[i].."amp") * math.sin((2*params:get("twin"..i.."lfo"..twinstep[i].."rate")*lfo_counter[i][twinstep[i]])/(LFO_RES))
       old_note[i][1] = note[i][1]
       note[i][1] = math.floor(12 * twin_lfo_value[i][twinstep[i]])
@@ -123,7 +133,7 @@ function count_and_act()
       if lfo_counter[i][twinstep[i]] >= 2*LFO_RES then lfo_counter[i][twinstep[i]] = 0 end
 
     --triangle
-    elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 3 then
+    elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 4 then
       local tempres = LFO_RES / params:get("twin"..i.."lfo"..twinstep[i].."rate")
       if lfo_counter[i][twinstep[i]]<= tempres then
         twin_lfo_value[i][twinstep[i]] = 1 - 2 * lfo_counter[i][twinstep[i]]/(tempres)
@@ -173,19 +183,19 @@ end
  
 function play_lfo(note, i)
   note = music.snap_note_to_array(60 + note,scale)
-  if params:get("twinout") == 1 then
-    m:note_off(note,100,i) --send midi to ch 1 or 2
-    m:note_on(note,100,i)
-    clock.run(midihang, note)
-  elseif params:get("twinout") == 2 then
+  if params:get("twin"..i.."out") == 1 then
+    m:note_off(note,100,params:get("midi_ch_"..i)) --send midi to ch 1 or 2
+    m:note_on(note,100,params:get("midi_ch_"..i))
+    clock.run(midihang, note, ch)
+  elseif params:get("twin"..i.."out") == 2 then
     crow.output[(i-1)*2 + 1].volts = (((note)-60)/12)
     crow.output[(i-1)*2 + 2].execute()
   end
 end
 
-function midihang(note)
+function midihang(note, ch)
   clock.sleep(0.01)
-  m:note_off(note,100,1)
+  m:note_off(note,100,ch)
 end
  
 function rerun()
