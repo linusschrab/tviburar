@@ -137,9 +137,14 @@ function count_and_act()
 
       if lfo_counter[i][twinstep[i]]>= LFO_RES / (2*params:get("twin"..i.."lfo"..twinstep[i].."rate")) then
         twin_lfo_value[i][twinstep[i]] = math.random(120)/120
-        old_note[i][3] = note[i][3]
-        note[i][3] = math.floor(12 * twin_lfo_value[i][twinstep[i]] + params:get("twin"..i.."lfo"..twinstep[i].."amp") * 12)
-        if math.abs(note[i][3] - old_note[i][3]) >= 1 then play_lfo(note[i][3] + 12*params:get("twin"..i.."lfo"..twinstep[i].."off"), i) end
+        old_note[i][1] = note[i][1]
+        note[i][1] = math.floor(
+            
+          12 * (twin_lfo_value[i][twinstep[i]]
+          * params:get("twin"..i.."lfo"..twinstep[i].."amp"))
+          + 12 * params:get("twin"..i.."lfo"..twinstep[i].."off")
+        )
+        if math.abs(note[i][1] - old_note[i][3]) >= 1 then play_lfo(note[i][1]), i) end
         lfo_counter[i][twinstep[i]]= 0
       end
 
@@ -156,15 +161,27 @@ function count_and_act()
 
       old_note[i][2] = note[i][2]
       
-      note[i][2] = math.floor(params:get("twin"..i.."lfo"..twinstep[i].."amp") * 12 * twin_lfo_value[i][twinstep[i]]) 
-      if math.abs(note[i][2] - old_note[i][2]) >= 1 then play_lfo(note[i][2] + 12*params:get("twin"..i.."lfo"..twinstep[i].."off"), i) end
+      note[i][2] = math.floor(
+            
+        12 * (twin_lfo_value[i][twinstep[i]]
+        * params:get("twin"..i.."lfo"..twinstep[i].."amp"))
+        + 12 * params:get("twin"..i.."lfo"..twinstep[i].."off")
+      )
+      
+      if math.abs(note[i][2] - old_note[i][2]) >= 1 then 
+        play_lfo(note[i][2]), i) end
       
     --sine
     elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 5 then
       twin_lfo_value[i][twinstep[i]] = params:get("twin"..i.."lfo"..twinstep[i].."amp") * math.sin((2*params:get("twin"..i.."lfo"..twinstep[i].."rate")*lfo_counter[i][twinstep[i]])/(LFO_RES))
-      old_note[i][1] = note[i][1]
-      note[i][1] = math.floor(12 * twin_lfo_value[i][twinstep[i]])
-      if math.abs(old_note[i][1] - note[i][1]) >= 1 then play_lfo(note[i][1] + 12*params:get("twin"..i.."lfo"..twinstep[i].."off"), i) end
+      old_note[i][3] = note[i][3]
+      note[i][3] = math.floor(
+            
+        12 * (twin_lfo_value[i][twinstep[i]]
+        * params:get("twin"..i.."lfo"..twinstep[i].."amp"))
+        + 12 * params:get("twin"..i.."lfo"..twinstep[i].."off")
+      )
+      if math.abs(old_note[i][1] - note[i][3]) >= 1 then play_lfo(note[i][3]), i) end
       if lfo_counter[i][twinstep[i]] >= 2*LFO_RES then lfo_counter[i][twinstep[i]] = 0 end
       
     end
