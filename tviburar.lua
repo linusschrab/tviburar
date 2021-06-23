@@ -1,5 +1,10 @@
 local lattice = require("lattice")
 local music = require("musicutil")
+--local MollyThePoly = require "molly_the_poly/lib/molly_the_poly_engine"
+--engine.name = "MollyThePoly"
+thebangs = include('thebangs/lib/thebangs_engine')
+local Thebangs = require "thebangs/lib/thebangs_engine"
+engine.name = "Thebangs"
 
 local m = midi.connect(1)
  
@@ -64,8 +69,11 @@ end
  
 function init_params()
 
-  params:add_option("twin1out", "twin 1 output", {"midi", "crow 1/2"})
-  params:add_option("twin2out", "twin 2 output", {"midi", "crow 3/4"})
+  --params:add_group("molly the poly", 46)
+  --MollyThePoly.add_params()
+
+  params:add_option("twin1out", "twin 1 output", {"mute", "engine", "midi", "crow 1/2"}, 3)
+  params:add_option("twin2out", "twin 2 output", {"mute", "engine", "midi", "crow 3/4"}, 3)
   params:add_number("mididevice","midi device",1,#midi.vports,1)
   params:set_action("mididevice", function (x)
     m = midi.connect(x)
@@ -80,9 +88,11 @@ function init_params()
   end)
   params:add_option("root_note", "root note", music.note_nums_to_names({0,1,2,3,4,5,6,7,8,9,10,11}),1)
   for i=1,2 do
-    params:add_option("twin"..i.."div", "twin "..i.." division", div.names, 7)
+    --params:add_option("twin"..i.."div", "twin "..i.." division", div.names, 7)
+    params:add_number("twin"..i.."div", "twin "..i.." timing 1/x", 1,48,4)
     params:set_action("twin"..i.."div", function(x)
-      twin[i]:set_division(div.options[x])
+      --twin[i]:set_division(div.options[x])
+      twin[i]:set_division(1/x)
     end)
   end
   for i=1,2 do
@@ -97,7 +107,7 @@ function init_params()
   end
   for i=1,2 do
     for j=1,4 do
-      params:add_number("twin"..i.."lfo"..j.."off","twin "..i.." lfo oct off "..j,-3,3,0)
+      params:add_number("twin"..i.."lfo"..j.."off","twin "..i.." lfo offset "..j,-12,12,0)
     end
   end
   for i=1,2 do
@@ -126,7 +136,7 @@ function count_and_act()
             
               12 * (twin_lfo_value[i][twinstep[i]]
               * params:get("twin"..i.."lfo"..twinstep[i].."amp"))
-              + 12 * params:get("twin"..i.."lfo"..twinstep[i].."off")
+              + params:get("twin"..i.."lfo"..twinstep[i].."off")
           ), i
         )
         lfo_counter[i][twinstep[i]] = 0
@@ -142,9 +152,9 @@ function count_and_act()
             
           12 * (twin_lfo_value[i][twinstep[i]]
           * params:get("twin"..i.."lfo"..twinstep[i].."amp"))
-          + 12 * params:get("twin"..i.."lfo"..twinstep[i].."off")
+          + params:get("twin"..i.."lfo"..twinstep[i].."off")
         )
-        if math.abs(note[i][1] - old_note[i][3]) >= 1 then play_lfo(note[i][1]), i) end
+        if math.abs(note[i][1] - old_note[i][3]) >= 1 then play_lfo((note[i][1]), i) end
         lfo_counter[i][twinstep[i]]= 0
       end
 
@@ -165,11 +175,11 @@ function count_and_act()
             
         12 * (twin_lfo_value[i][twinstep[i]]
         * params:get("twin"..i.."lfo"..twinstep[i].."amp"))
-        + 12 * params:get("twin"..i.."lfo"..twinstep[i].."off")
+        + params:get("twin"..i.."lfo"..twinstep[i].."off")
       )
       
       if math.abs(note[i][2] - old_note[i][2]) >= 1 then 
-        play_lfo(note[i][2]), i) end
+        play_lfo((note[i][2]), i) end
       
     --sine
     elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 5 then
@@ -179,9 +189,9 @@ function count_and_act()
             
         12 * (twin_lfo_value[i][twinstep[i]]
         * params:get("twin"..i.."lfo"..twinstep[i].."amp"))
-        + 12 * params:get("twin"..i.."lfo"..twinstep[i].."off")
+        + params:get("twin"..i.."lfo"..twinstep[i].."off")
       )
-      if math.abs(old_note[i][1] - note[i][3]) >= 1 then play_lfo(note[i][3]), i) end
+      if math.abs(old_note[i][1] - note[i][3]) >= 1 then play_lfo((note[i][3]), i) end
       if lfo_counter[i][twinstep[i]] >= 2*LFO_RES then lfo_counter[i][twinstep[i]] = 0 end
       
     end
@@ -209,11 +219,15 @@ end
  
 function play_lfo(note, i)
   note = music.snap_note_to_array(60 + note,scale)
-  if params:get("twin"..i.."out") == 1 then
+  if params:get("twin"..i.."out") == 2 then
+    engine.hz(music.note_num_to_freq(note))
+    --engine.noteOn(note, music.note_num_to_freq(note),100)
+    --clock.run(eng_hang, note,i)
+  elseif params:get("twin"..i.."out") == 3 then
     m:note_off(note,100,params:get("midi_ch_"..i)) --send midi to ch 1 or 2
     m:note_on(note,100,params:get("midi_ch_"..i))
     clock.run(midihang, note, ch)
-  elseif params:get("twin"..i.."out") == 2 then
+  elseif params:get("twin"..i.."out") == 4 then
     crow.output[(i-1)*2 + 1].volts = (((note)-60)/12)
     crow.output[(i-1)*2 + 2].execute()
   end
@@ -223,6 +237,11 @@ function midihang(note, ch)
   clock.sleep(0.01)
   m:note_off(note,100,ch)
 end
+
+function eng_hang(note,i)
+  clock.sleep(0.01)
+  engine.noteOff(note)
+end                               
  
 function rerun()
   norns.script.load(norns.state.script)
