@@ -96,22 +96,11 @@ function init_params()
     end)
   end
   for i=1,2 do
+    params:add_group("twin lfo "..i.." tweaks",16)
     for j=1,4 do
       params:add_option("twin"..i.."lfo"..j.."shape", "twin "..i.." lfo "..j.." shape",LFO_SHAPES,2)
-    end
-  end
-  for i=1,2 do
-    for j=1,4 do
       params:add_control("twin"..i.."lfo"..j.."rate", "twin "..i.." lfo "..j.." rate", controlspec.new(0.01,50,"exp",0.001,math.random(1, 30)/10,"hz",1/1000))
-    end
-  end
-  for i=1,2 do
-    for j=1,4 do
       params:add_number("twin"..i.."lfo"..j.."off","twin "..i.." lfo offset "..j,-12,12,0)
-    end
-  end
-  for i=1,2 do
-    for j=1,4 do
       params:add_control("twin"..i.."lfo"..j.."amp","twin "..i.." lfo amp "..j,controlspec.new(0,5,"lin",0.01,1,"",1/100))
     end
   end
