@@ -82,7 +82,7 @@ function init_params()
   params:add_number("midi_ch_2","midi ch twin 2",1,#midi.vports,1)
   
 
-  params:add_option("scale","scale",SCALES,1)
+  params:add_option("scale","scale",SCALES,5) --dorian
   params:set_action("scale", function (x) 
     scale = music.generate_scale(params:get("root_note")-1, x, 10) 
   end)
@@ -131,7 +131,6 @@ function count_and_act()
       if lfo_counter[i][twinstep[i]] >= LFO_RES / (2*params:get("twin"..i.."lfo"..twinstep[i].."rate")) then
         twin_lfo_value[i][twinstep[i]] = twin_lfo_value[i][twinstep[i]] * -1
         
-        
         play_lfo(math.floor(
             
               12 * (twin_lfo_value[i][twinstep[i]]
@@ -154,7 +153,7 @@ function count_and_act()
           * params:get("twin"..i.."lfo"..twinstep[i].."amp"))
           + params:get("twin"..i.."lfo"..twinstep[i].."off")
         )
-        if math.abs(note[i][1] - old_note[i][3]) >= 1 then play_lfo((note[i][1]), i) end
+        if math.abs(note[i][1] - old_note[i][1]) >= 1 then play_lfo((note[i][]), i) end
         lfo_counter[i][twinstep[i]]= 0
       end
 
@@ -191,7 +190,7 @@ function count_and_act()
         * params:get("twin"..i.."lfo"..twinstep[i].."amp"))
         + params:get("twin"..i.."lfo"..twinstep[i].."off")
       )
-      if math.abs(old_note[i][1] - note[i][3]) >= 1 then play_lfo((note[i][3]), i) end
+      if math.abs(old_note[i][3] - note[i][3]) >= 1 then play_lfo((note[i][3]), i) end
       if lfo_counter[i][twinstep[i]] >= 2*LFO_RES then lfo_counter[i][twinstep[i]] = 0 end
       
     end
