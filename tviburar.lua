@@ -153,7 +153,7 @@ function count_and_act()
           * params:get("twin"..i.."lfo"..twinstep[i].."amp"))
           + params:get("twin"..i.."lfo"..twinstep[i].."off")
         )
-        if math.abs(note[i][1] - old_note[i][1]) >= 1 then play_lfo((note[i][]), i) end
+        if math.abs(note[i][1] - old_note[i][1]) >= 1 then play_lfo((note[i][1]), i) end
         lfo_counter[i][twinstep[i]]= 0
       end
 
@@ -209,9 +209,15 @@ end
  
 function redraw()
   screen.clear()
-  for i=1,2 do
-    screen.move(0,10*i)
-    screen.text(twinstep[i])
+  screen.move(64, 10)
+  screen.level(8)
+  screen.text_center("t v i b u r a r")
+  for y=1,2 do
+    for x=1,4 do
+      screen.rect(34+x*10,22+(y-1)*10,8,8)
+      if twinstep[y] == x then screen.level(15) else screen.level(5) end
+      screen.fill()
+    end
   end
   screen.update()
 end
