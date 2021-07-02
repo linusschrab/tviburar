@@ -94,7 +94,7 @@ function init_params()
 
   --params:add_group("molly the poly", 46)
   --MollyThePoly.add_params()
-
+  params:add_group("midi & outputs", 5)
   params:add_option("twin1out", "twin 1 output", {"mute", "engine", "midi", "crow 1/2", "w/syn"}, 3)
   params:set_action("twin1out", function(x)
     for i=0,127 do
@@ -114,6 +114,12 @@ function init_params()
   params:add_number("midi_ch_1","midi ch twin 1",1,#midi.vports,1)
   params:add_number("midi_ch_2","midi ch twin 2",1,#midi.vports,2)
   
+  params:add_group("scale and note options", 4)
+  params:add_option("scale","scale",SCALES,5) --dorian
+  params:set_action("scale", function (x) 
+    scale = music.generate_scale(params:get("root_note")-1, x, 10) 
+  end)
+  params:add_option("root_note", "root note", music.note_nums_to_names({0,1,2,3,4,5,6,7,8,9,10,11}),1)
   params:add_number("note_lim_low","lower note limit", 0, 127,0)
   params:set_action("note_lim_low", function (x)
     if x >= params:get("note_lim_high") then
@@ -126,22 +132,20 @@ function init_params()
       params:set("note_lim_high", params:get("note_lim_low"))
     end
   end)
-  params:add_option("scale","scale",SCALES,5) --dorian
-  params:set_action("scale", function (x) 
-    scale = music.generate_scale(params:get("root_note")-1, x, 10) 
-  end)
-  params:add_option("root_note", "root note", music.note_nums_to_names({0,1,2,3,4,5,6,7,8,9,10,11}),1)
   for i=1,2 do
     --params:add_option("twin"..i.."div", "twin "..i.." division", div.names, 7)
+    params:add_group("sequencer options", 6)
     params:add_number("twin"..i.."div", "twin "..i.." timing 1/x", 1,48,4)
     params:set_action("twin"..i.."div", function(x)
       --twin[i]:set_division(div.options[x])
       twin[i]:set_division(1/x)
     end)
     params:add_option("twin"..i.."direction", "twin "..i.." direction", SEQ_OPTIONS, 1)
+    params:add_control("twinfluence"..i, "twinfluence "..i.." <- "..util.wrap(i+1,1,2), controlspec.new(0,1,"lin",0.001,0,"/ 1.0",1/100))
   end
   for i=1,2 do
-    params:add_control("twinfluence"..i, "twinfluence "..i.." <- "..util.wrap(i+1,1,2), controlspec.new(0,1,"lin",0.001,0,"/ 1.0",1/100))
+  end
+  for i=1,2 do
     params:add_group("twin lfo "..i.." tweaks",16)
     for j=1,4 do
       params:add_option("twin"..i.."lfo"..j.."shape", "twin "..i.." lfo "..j.." shape",LFO_SHAPES,2)
