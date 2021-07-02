@@ -11,6 +11,10 @@ local m = midi.connect(1)
 local lat = lattice:new()
 local LFO_SHAPES = {"mute", "square", "random", "triangle", "sine"}
 local SEQ_OPTIONS = {"->", "<-", ">-<", "~"}
+local SCREEN_EDITS = {"shape", "rate", "off", "amp"}
+local sel_screen_edit = 1
+local ALT_SCREEN_EDITS = {"timing", "direction", "twinfluence"}
+local sel_alt_screen_edit = 1
 local ALT_KEY = false
 local pend_dir = {1, 1}
 local SCALES = {}
@@ -47,7 +51,8 @@ local div = {
  
 local screen_dirty = false
 
-local sel_lfo = 0
+local sel_lfo = 1
+local sel_lane = 1
  
 function init()
   crow.send("ii.wsyn.ar_mode(1)")
@@ -136,7 +141,7 @@ function init_params()
     params:add_option("twin"..i.."direction", "twin "..i.." direction", SEQ_OPTIONS, 1)
   end
   for i=1,2 do
-    params:add_control("influence_"..i.."_"..util.wrap(i+1,1,2), "twinfluence "..i.." <- "..util.wrap(i+1,1,2), controlspec.new(0,1,"lin",0.001,0,"/ 1.0",1/100))
+    params:add_control("twinfluence"..i, "twinfluence "..i.." <- "..util.wrap(i+1,1,2), controlspec.new(0,1,"lin",0.001,0,"/ 1.0",1/100))
     params:add_group("twin lfo "..i.." tweaks",16)
     for j=1,4 do
       params:add_option("twin"..i.."lfo"..j.."shape", "twin "..i.." lfo "..j.." shape",LFO_SHAPES,2)
@@ -307,7 +312,42 @@ end
 
 function enc(n, d)
   if n == 1 then
-    sel_lfo = util.wrap(sel_lfo + d, 1, 8)
+    if ALT_KEY then
+      sel_lane = util.clamp(sel_lane + d, 1, 2)
+    else
+      sel_lfo = util.clamp(sel_lfo + d, 1, 4)
+    end
+    screen_dirty = true
+  end
+  if n == 2 then
+    if ALT_KEY then
+      sel_alt_screen_edit = util.clamp(sel_alt_screen_edit + d, 1, #ALT_SCREEN_EDITS)
+    else
+      sel_screen_edit = util.clamp(sel_screen_edit + d, 1, #SCREEN_EDITS)
+    end
+    screen_dirty = true
+  end
+  if n == 3 then
+    if ALT_KEY then
+      if sel_alt_screen_edit == 1 then
+        params:set("twin"..sel_lane.."div", util.clamp(params:get("twin"..sel_lane.."div") + d, 1, 48))
+      elseif sel_alt_screen_edit == 2 then
+        params:set("twin"..sel_lane.."direction", util.clamp(params:get("twin"..sel_lane.."direction") + d, 1, #SEQ_OPTIONS))
+      elseif sel_alt_screen_edit == 3 then
+        params:set("twinfluence"..sel_lane, util.clamp(params:get("twinfluence"..sel_lane) + d/100, 0, 1))
+        
+      end
+    else
+      if sel_screen_edit == 1 then
+        params:set("twin"..sel_lane.."lfo"..sel_lfo.."shape", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."shape") + d, 1, #LFO_SHAPES))
+      elseif sel_screen_edit == 2 then
+        params:set("twin"..sel_lane.."lfo"..sel_lfo.."rate", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."rate") + d/100, 0.1, 25))
+      elseif sel_screen_edit == 3 then
+        params:set("twin"..sel_lane.."lfo"..sel_lfo.."off", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."off") + d, 0, 12))
+      elseif sel_screen_edit == 4 then
+        params:set("twin"..sel_lane.."lfo"..sel_lfo.."amp", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."amp") + d/100, 0, 5))
+      end
+    end
     screen_dirty = true
   end
 end
@@ -425,41 +465,66 @@ end
  
 function redraw()
   screen.clear()
-  screen.move(64, 10)
+  screen.move(64, 13)
   screen.level(8)
-  screen.text_center("t v i b u r a r")
+  screen.text_center(". . . . . t v i b u r a r . . . . .")
   for y=1,2 do
     for x=1,4 do
-      screen.rect(2+x*10,25+(y-1)*10,8,8)
+      screen.rect(8+(x-1)*10,25+(y-1)*10,8,8)
       if twinstep[y] == x then screen.level(15) else screen.level(5) end
       screen.fill()
     end
   end
 
   if ALT_KEY then
-    screen.level(8)
-    screen.move(126, 30)
-    screen.text_right("timing: 1/4")
     screen.level(15)
-    screen.move(126, 40)
-    screen.level(8)
-    screen.text_right("direction: ->")
-    screen.move(126, 50)
-    screen.text_right("offset: 7 st")
-    screen.move(126, 60)
-    screen.text_right("amp: 1.7")
+    screen.move(6, 25+(sel_lane-1)*10)
+    screen.line (6, 33+(sel_lane-1)*10)
+    screen.stroke()
   else
-    screen.level(8)
-    screen.move(126, 30)
-    screen.text_right("shape: square")
     screen.level(15)
+    screen.move(8+(sel_lfo-1)*10, 23+(sel_lane-1)*23)
+    screen.line (16+(sel_lfo-1)*10, 23+(sel_lane-1)*23)
+    screen.stroke()
+  end
+  
+  if ALT_KEY then
+    screen.level(sel_alt_screen_edit == 1 and 15 or 2)
+    screen.move(96, 40)
+    screen.text_right("timing:")
     screen.move(126, 40)
-    screen.level(8)
-    screen.text_right("rate: 2.5 hz")
+    screen.text_right("1/"..params:get("twin"..sel_lane.."div"))
+    screen.level(sel_alt_screen_edit == 2 and 15 or 2)
+    screen.move(96, 50)
+    screen.text_right("direction:")
     screen.move(126, 50)
-    screen.text_right("offset: 7 st")
+    screen.text_right(SEQ_OPTIONS[params:get("twin"..sel_lane.."direction")])
+    screen.level(sel_alt_screen_edit == 3 and 15 or 2)
+    screen.move(96, 60)
+    screen.text_right("twinfluence 1 <- 2:")
+    screen.move(126,60)
+    screen.text_right(params:get("twinfluence"..sel_lane))
+  else
+    screen.level(sel_screen_edit == 1 and 15 or 2)
+    screen.move(86, 30)
+    screen.text_right("shape:")
+    screen.move(126, 30)
+    screen.text_right(LFO_SHAPES[params:get("twin"..sel_lane.."lfo"..sel_lfo.."shape")])
+    screen.level(sel_screen_edit == 2 and 15 or 2)
+    screen.move(86, 40)
+    screen.text_right("rate:")
+    screen.move(126, 40)
+    screen.text_right(params:get("twin"..sel_lane.."lfo"..sel_lfo.."rate").." hz")
+    screen.level(sel_screen_edit == 3 and 15 or 2)
+    screen.move(86, 50)
+    screen.text_right("offset:")
+    screen.move(126, 50)
+    screen.text_right(params:get("twin"..sel_lane.."lfo"..sel_lfo.."off").." st")
+    screen.level(sel_screen_edit == 4 and 15 or 2)
+    screen.move(86, 60)
+    screen.text_right("amp:")
     screen.move(126, 60)
-    screen.text_right("amp: 1.7")
+    screen.text_right(params:get("twin"..sel_lane.."lfo"..sel_lfo.."amp"))
   end
 
   screen.update()
