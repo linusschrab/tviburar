@@ -38,7 +38,7 @@ local twin_lfo_value = {
   {1,1,1,1}
 }
 
-local LFO_RES = 500
+local LFO_RES = 220
 local lfo_counter = {
   {0,0,0,0},
   {0,0,0,0}
@@ -346,7 +346,7 @@ function enc(n, d)
       elseif sel_screen_edit == 2 then
         params:set("twin"..sel_lane.."lfo"..sel_lfo.."rate", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."rate") + d/100, 0.1, 25))
       elseif sel_screen_edit == 3 then
-        params:set("twin"..sel_lane.."lfo"..sel_lfo.."off", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."off") + d, 0, 12))
+        params:set("twin"..sel_lane.."lfo"..sel_lfo.."off", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."off") + d, -12, 12))
       elseif sel_screen_edit == 4 then
         params:set("twin"..sel_lane.."lfo"..sel_lfo.."amp", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."amp") + d/100, 0, 5))
       end
