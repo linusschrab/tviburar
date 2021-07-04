@@ -372,7 +372,7 @@ function count_and_act()
     elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 2 then
       if lfo_counter[i][twinstep[i]] >= LFO_RES / (2  * params:get("twin"..i.."lfo"..twinstep[i].."rate")) then
         lfo_counter[i][twinstep[i]] = 0
-        print(twin_lfo_value[i][twinstep[i]])
+        --print(twin_lfo_value[i][twinstep[i]])
         old_note[i][twinstep[i]] = note[i][twinstep[i]]
         if twin_lfo_value[i][twinstep[i]] == 0 then twin_lfo_value[i][twinstep[i]] = 1 end
         twin_lfo_value[i][twinstep[i]] = -1 * twin_lfo_value[i][twinstep[i]]
