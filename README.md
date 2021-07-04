@@ -1,7 +1,7 @@
 # tviburar
 ...is a dual lane four step polyrytythmic sequencer where each step contains a free running lfo that will generate notes.
 the lfo modes are, square, sample & hold, triangle, ramp up, ramp down and sine. the steps can also be muted.
-the two sequencers can influence each others lfo values creating a complex environment where the rate of repetition is stretched out over long, near infinite, timespace.
+the two sequencers can influence each others lfo values creating a complex environment where the rate of repetition is stretched out over a long, near infinite, timespace.
 
 performance tweaks are accessible from the main screen.
 E1 - scrolls through the lfos (alt. switches between the sequencer lanes)
