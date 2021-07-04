@@ -9,7 +9,7 @@ engine.name = "Thebangs"
 local m = midi.connect(1)
  
 local lat = lattice:new()
-local LFO_SHAPES = {"mute", "square", "random", "triangle", "saw", "rev saw", "sine"}
+local LFO_SHAPES = {"mute", "square", "random", "triangle", "ramp up", "ramp down", "sine"}
 local SEQ_OPTIONS = {"->", "<-", ">-<", "~"}
 local SCREEN_EDITS = {"shape", "rate", "off", "amp"}
 local sel_screen_edit = 1
@@ -306,9 +306,9 @@ function wsyn_add_params()
 end
 
 function key(k, z)
-  if k == 1 and z == 1 then
+  if (k == 1 or k == 2 or k == 3) and z == 1 then
     ALT_KEY = true
-  elseif k == 1 and z == 0 then
+  elseif (k == 1 or k == 2 or k == 3) and z == 0 then
     ALT_KEY = false
   end
   screen_dirty = true
@@ -516,12 +516,12 @@ end
  
 function redraw()
   screen.clear()
-  screen.move(64, 13)
+  screen.move(64, 14)
   screen.level(8)
   screen.text_center("' ' ' ' ' t v i b u r a r ' ' ' ' '")
   for y=1,2 do
     for x=1,4 do
-      screen.rect(8+(x-1)*10,25+(y-1)*10,8,8)
+      screen.rect(6+(x-1)*10,25+(y-1)*10,8,8)
       if twinstep[y] == x then screen.level(15) else screen.level(5) end
       screen.fill()
     end
@@ -529,53 +529,53 @@ function redraw()
 
   if ALT_KEY then
     screen.level(15)
-    screen.move(6, 25+(sel_lane-1)*10)
-    screen.line (6, 33+(sel_lane-1)*10)
+    screen.move(4, 25+(sel_lane-1)*10)
+    screen.line (4, 33+(sel_lane-1)*10)
     screen.stroke()
   else
     screen.level(15)
-    screen.move(8+(sel_lfo-1)*10, 23+(sel_lane-1)*23)
-    screen.line (16+(sel_lfo-1)*10, 23+(sel_lane-1)*23)
+    screen.move(6+(sel_lfo-1)*10, 23+(sel_lane-1)*23)
+    screen.line (14+(sel_lfo-1)*10, 23+(sel_lane-1)*23)
     screen.stroke()
   end
   
   if ALT_KEY then
     screen.level(sel_alt_screen_edit == 1 and 15 or 2)
-    screen.move(96, 40)
+    screen.move(98, 40)
     screen.text_right("timing:")
-    screen.move(126, 40)
-    screen.text_right("1/"..params:get("twin"..sel_lane.."div"))
+    screen.move(102, 40)
+    screen.text("1/"..params:get("twin"..sel_lane.."div"))
     screen.level(sel_alt_screen_edit == 2 and 15 or 2)
-    screen.move(96, 50)
+    screen.move(98, 50)
     screen.text_right("direction:")
-    screen.move(126, 50)
-    screen.text_right(SEQ_OPTIONS[params:get("twin"..sel_lane.."direction")])
+    screen.move(102, 50)
+    screen.text(SEQ_OPTIONS[params:get("twin"..sel_lane.."direction")])
     screen.level(sel_alt_screen_edit == 3 and 15 or 2)
-    screen.move(96, 60)
-    screen.text_right("twinfluence 1 <- 2:")
-    screen.move(126,60)
-    screen.text_right(params:get("twinfluence"..sel_lane))
+    screen.move(98, 60)
+    screen.text_right("twinfluence "..sel_lane.." <- "..util.wrap(sel_lane+1,1,2)..":")
+    screen.move(102,60)
+    screen.text(params:get("twinfluence"..sel_lane))
   else
     screen.level(sel_screen_edit == 1 and 15 or 2)
-    screen.move(86, 30)
+    screen.move(78, 30)
     screen.text_right("shape:")
-    screen.move(126, 30)
-    screen.text_right(LFO_SHAPES[params:get("twin"..sel_lane.."lfo"..sel_lfo.."shape")])
+    screen.move(82, 30)
+    screen.text(LFO_SHAPES[params:get("twin"..sel_lane.."lfo"..sel_lfo.."shape")])
     screen.level(sel_screen_edit == 2 and 15 or 2)
-    screen.move(86, 40)
+    screen.move(78, 40)
     screen.text_right("rate:")
-    screen.move(126, 40)
-    screen.text_right(params:get("twin"..sel_lane.."lfo"..sel_lfo.."rate").." hz")
+    screen.move(82, 40)
+    screen.text(params:get("twin"..sel_lane.."lfo"..sel_lfo.."rate").." hz")
     screen.level(sel_screen_edit == 3 and 15 or 2)
-    screen.move(86, 50)
+    screen.move(78, 50)
     screen.text_right("offset:")
-    screen.move(126, 50)
-    screen.text_right(params:get("twin"..sel_lane.."lfo"..sel_lfo.."off").." st")
+    screen.move(82, 50)
+    screen.text(params:get("twin"..sel_lane.."lfo"..sel_lfo.."off").." st")
     screen.level(sel_screen_edit == 4 and 15 or 2)
-    screen.move(86, 60)
+    screen.move(78, 60)
     screen.text_right("amp:")
-    screen.move(126, 60)
-    screen.text_right(params:get("twin"..sel_lane.."lfo"..sel_lfo.."amp"))
+    screen.move(82, 60)
+    screen.text(params:get("twin"..sel_lane.."lfo"..sel_lfo.."amp"))
   end
   screen.update()
 end                       
