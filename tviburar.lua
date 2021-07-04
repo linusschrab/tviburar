@@ -38,7 +38,7 @@ local twin_lfo_value = {
   {1,1,1,1}
 }
 
-local LFO_RES = 220
+local LFO_RES = 250
 local lfo_counter = {
   {0,0,0,0},
   {0,0,0,0}
@@ -148,7 +148,7 @@ function init_params()
     params:add_group("twin lfo "..i.." tweaks",16)
     for j=1,4 do
       params:add_option("twin"..i.."lfo"..j.."shape", "twin "..i.." lfo "..j.." shape",LFO_SHAPES,2)
-      params:add_control("twin"..i.."lfo"..j.."rate", "twin "..i.." lfo "..j.." rate", controlspec.new(0.01,25,"exp",0.001,math.random(1, 30)/10,"hz",1/1000))
+      params:add_control("twin"..i.."lfo"..j.."rate", "twin "..i.." lfo "..j.." rate", controlspec.new(0.01,10,"exp",0.001,math.random(1, 100)/10,"hz",1/1000))
       params:add_number("twin"..i.."lfo"..j.."off","twin "..i.." lfo offset "..j,-12,12,0)
       params:add_control("twin"..i.."lfo"..j.."amp","twin "..i.." lfo amp "..j,controlspec.new(0,5,"lin",0.01,1,"",1/100))
     end
@@ -344,7 +344,7 @@ function enc(n, d)
       if sel_screen_edit == 1 then
         params:set("twin"..sel_lane.."lfo"..sel_lfo.."shape", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."shape") + d, 1, #LFO_SHAPES))
       elseif sel_screen_edit == 2 then
-        params:set("twin"..sel_lane.."lfo"..sel_lfo.."rate", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."rate") + d/100, 0.1, 25))
+        params:set("twin"..sel_lane.."lfo"..sel_lfo.."rate", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."rate") + d/100, 0.01, 10))
       elseif sel_screen_edit == 3 then
         params:set("twin"..sel_lane.."lfo"..sel_lfo.."off", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."off") + d, -12, 12))
       elseif sel_screen_edit == 4 then
@@ -370,22 +370,24 @@ function count_and_act()
 
     --square
     elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 2 then
-      if lfo_counter[i][twinstep[i]] >= LFO_RES / (2*params:get("twin"..i.."lfo"..twinstep[i].."rate")) then
-        twin_lfo_value[i][twinstep[i]] = -1 * twin_lfo_value[i][twinstep[i]]
+      if lfo_counter[i][twinstep[i]] >= LFO_RES / (2  * params:get("twin"..i.."lfo"..twinstep[i].."rate")) then
         lfo_counter[i][twinstep[i]] = 0
-        --print(twin_lfo_value[i][twinstep[i]])
-        play_lfo(math.floor(
+        print(twin_lfo_value[i][twinstep[i]])
+        old_note[i][twinstep[i]] = note[i][twinstep[i]]
+        if twin_lfo_value[i][twinstep[i]] == 0 then twin_lfo_value[i][twinstep[i]] = 1 end
+        twin_lfo_value[i][twinstep[i]] = -1 * twin_lfo_value[i][twinstep[i]]
+        note[i][twinstep[i]] = math.floor(
               12 * (twin_lfo_value[i][twinstep[i]]
               * params:get("twin"..i.."lfo"..twinstep[i].."amp"))
               * (1 + (params:get("twinfluence"..i) * twin_lfo_value[util.wrap(i+1,1,2)][twinstep[util.wrap(i+1,1,2)]] * params:get("twin"..util.wrap(i+1,1,2).."lfo"..twinstep[util.wrap(i+1,1,2)].."amp")))
               + params:get("twin"..i.."lfo"..twinstep[i].."off")
-          ), i
-        )
+          )
+        play_lfo(note[i][twinstep[i]], i)
       end
     
     --random
     elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 3 then
-      if lfo_counter[i][twinstep[i]] >= LFO_RES / 2 * params:get("twin"..i.."lfo"..twinstep[i].."rate") then
+      if lfo_counter[i][twinstep[i]] == 0 then --LFO_RES / (2 * params:get("twin"..i.."lfo"..twinstep[i].."rate")) then
         lfo_counter[i][twinstep[i]] = 0
         twin_lfo_value[i][twinstep[i]] = math.random(120)/120
         old_note[i][twinstep[i]] = note[i][twinstep[i]]
