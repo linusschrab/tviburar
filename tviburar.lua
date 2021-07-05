@@ -52,6 +52,10 @@ local sel_lfo = 1
 local sel_lane = 1
  
 function init()
+  for i=1,3 do
+    --norns.encoders.set_accel(i,false)
+    norns.encoders.set_sens(i,8)
+  end
   crow.send("ii.wsyn.ar_mode(1)")
   init_params()
   params:add_group("polysub", 19)
@@ -64,7 +68,7 @@ function init()
     twin[i] = lat:new_pattern{
       action = function (x)
         if params:get("twin"..i.."direction") == 1 then --forward
-          twinstep[i] = util.wrap(twinstep[i] + 1,1,4) -- util.wrap does the same as compare + increment, which is rad!
+          twinstep[i] = util.wrap(twinstep[i] + 1,1,4)
         elseif params:get("twin"..i.."direction") == 2 then --backwards
           twinstep[i] = util.wrap(twinstep[i] - 1,1,4)
         elseif params:get("twin"..i.."direction") == 3 then --pendulum
@@ -90,7 +94,7 @@ end
  
 function init_params()
   params:add_group("midi & outputs", 5)
-  params:add_option("twin1out", "twin 1 output", {"mute", "polysub", "midi", "crow 1/2", "w/syn", "jf"}, 3)
+  params:add_option("twin1out", "twin 1 output", {"mute", "polysub", "midi", "crow 1/2", "w/syn", "jf"}, 2)
   params:set_action("twin1out", function(x)
     for i=0,127 do
       m:note_off(i,100,params:get("midi_ch_1"))
@@ -131,10 +135,8 @@ function init_params()
   end)
   params:add_group("sequencer options", 6)
   for i=1,2 do
-    --params:add_option("twin"..i.."div", "twin "..i.." division", div.names, 7)
     params:add_number("twin"..i.."div", "twin "..i.." timing 1/x", 1,48,4)
     params:set_action("twin"..i.."div", function(x)
-      --twin[i]:set_division(div.options[x])
       twin[i]:set_division(1/x)
     end)
     params:add_option("twin"..i.."direction", "twin "..i.." direction", SEQ_OPTIONS, 1)
@@ -154,7 +156,7 @@ function init_params()
 end
 
 function wsyn_add_params()
-  params:add_group("w/syn",12)
+  params:add_group("w/syn",11)
   params:add {
     type = "option",
     id = "wsyn_ar_mode",
@@ -252,21 +254,6 @@ function wsyn_add_params()
     action = function(val) 
       crow.send("ii.wsyn.lpg_symmetry(" .. val .. ")") 
       pset_wsyn_lpg_symmetry = val
-    end
-  }
-  params:add{
-    type = "trigger",
-    id = "wsyn_pluckylog",
-    name = "Pluckylogger >>>",
-    action = function()
-      params:set("wsyn_curve", math.random(-40, 40)/10)
-      params:set("wsyn_ramp", math.random(-5, 5)/10)
-      params:set("wsyn_fm_index", math.random(-50, 50)/10)
-      params:set("wsyn_fm_env", math.random(-50, 40)/10)
-      params:set("wsyn_fm_ratio_num", math.random(1, 4))
-      params:set("wsyn_fm_ratio_den", math.random(1, 4))
-      params:set("wsyn_lpg_time", math.random(-28, -5)/10)
-      params:set("wsyn_lpg_symmetry", math.random(-50, -30)/10)
     end
   }
   params:add{
@@ -469,7 +456,7 @@ function play_lfo(note, i)
     engine.start(i,music.note_num_to_freq(note))
       clock.run(eng_hang, note, i)
   elseif params:get("twin"..i.."out") == 3 then
-    m:note_off(note,100,params:get("midi_ch_"..i)) --send midi to ch 1 or 2
+    m:note_off(note,100,params:get("midi_ch_"..i))
     m:note_on(note,100,params:get("midi_ch_"..i))
     clock.run(midihang, note, ch, i)
   elseif params:get("twin"..i.."out") == 4 then
