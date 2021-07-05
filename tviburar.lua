@@ -1,3 +1,20 @@
+-- ' ' ' t v i b u r a r ' ' '
+--
+-- @vicimity (linus schrab)
+-- & @ljudvagg (filip forsstrom)
+--
+-- dual lane four step 
+-- sequencer with eight 
+-- free running lfo's 
+-- generating notes
+-- in a musical manner.
+--
+-- E1 scroll lfos (alt. lanes)
+-- E2 scroll settings
+-- E3 edit values
+-- K1/K2/K3 is alt. (access 
+-- sequencer options) 
+
 local lattice = require("lattice")
 local music = require("musicutil")
 local polysub = include 'we/lib/polysub'
