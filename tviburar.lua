@@ -363,10 +363,7 @@ function count_and_act()
         lfo_counter[i][twinstep[i]] = 0
         if twin_lfo_value[i][twinstep[i]] == 0 then twin_lfo_value[i][twinstep[i]] = 1 end
         twin_lfo_value[i][twinstep[i]] = -1 * twin_lfo_value[i][twinstep[i]]
-        twin_lfo_value[i][twinstep[i]] = ((twin_lfo_value[i][twinstep[i]]
-        * params:get("twin"..i.."lfo"..twinstep[i].."amp"))
-        + (params:get("twin"..i.."lfo"..twinstep[i].."off") / 12))
-        * (1 + (params:get("twinfluence"..i) 
+        twin_lfo_value[i][twinstep[i]] = ampoffandtwinfluence(i)
         * twin_lfo_value[util.wrap(i+1,1,2)][twinstep[util.wrap(i+1,1,2)]]))
         old_note[i][twinstep[i]] = note[i][twinstep[i]]
         note[i][twinstep[i]] = math.floor(12 * twin_lfo_value[i][twinstep[i]])
@@ -378,11 +375,7 @@ function count_and_act()
       if lfo_counter[i][twinstep[i]] == 0 then
         lfo_counter[i][twinstep[i]] = 0
         twin_lfo_value[i][twinstep[i]] = math.random(120)/120
-        twin_lfo_value[i][twinstep[i]] = ((twin_lfo_value[i][twinstep[i]]
-        * params:get("twin"..i.."lfo"..twinstep[i].."amp"))
-        + (params:get("twin"..i.."lfo"..twinstep[i].."off") / 12))
-        * (1 + (params:get("twinfluence"..i) 
-        * twin_lfo_value[util.wrap(i+1,1,2)][twinstep[util.wrap(i+1,1,2)]]))
+        twin_lfo_value[i][twinstep[i]] = ampoffandtwinfluence(i)
         old_note[i][twinstep[i]] = note[i][twinstep[i]]
         note[i][twinstep[i]] = math.floor(12 * twin_lfo_value[i][twinstep[i]])
         if math.abs(note[i][twinstep[i]] - old_note[i][twinstep[i]]) >= 1 or params:get("twin"..i.."lfo"..twinstep[i].."amp") == 0 then 
@@ -397,11 +390,7 @@ function count_and_act()
       else
         twin_lfo_value[i][twinstep[i]] = 3 - 4 * lfo_counter[i][twinstep[i]] / (LFO_RES / params:get("twin"..i.."lfo"..twinstep[i].."rate"))
       end
-      twin_lfo_value[i][twinstep[i]] = ((twin_lfo_value[i][twinstep[i]]
-      * params:get("twin"..i.."lfo"..twinstep[i].."amp"))
-      + (params:get("twin"..i.."lfo"..twinstep[i].."off") / 12))
-      * (1 + (params:get("twinfluence"..i) 
-      * twin_lfo_value[util.wrap(i+1,1,2)][twinstep[util.wrap(i+1,1,2)]]))
+      twin_lfo_value[i][twinstep[i]] = ampoffandtwinfluence(i)
       old_note[i][twinstep[i]] = note[i][twinstep[i]]
       note[i][twinstep[i]] = math.floor(12 * twin_lfo_value[i][twinstep[i]])
       if math.abs(note[i][twinstep[i]] - old_note[i][twinstep[i]]) >= 1 or params:get("twin"..i.."lfo"..twinstep[i].."amp") == 0 then 
@@ -412,11 +401,7 @@ function count_and_act()
     --ramp up
     elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 5 then
       twin_lfo_value[i][twinstep[i]] = 2 * lfo_counter[i][twinstep[i]] / (LFO_RES / params:get("twin"..i.."lfo"..twinstep[i].."rate")) - 1
-      twin_lfo_value[i][twinstep[i]] = ((twin_lfo_value[i][twinstep[i]]
-      * params:get("twin"..i.."lfo"..twinstep[i].."amp"))
-      + (params:get("twin"..i.."lfo"..twinstep[i].."off") / 12))
-      * (1 + (params:get("twinfluence"..i) 
-      * twin_lfo_value[util.wrap(i+1,1,2)][twinstep[util.wrap(i+1,1,2)]]))
+      twin_lfo_value[i][twinstep[i]] = ampoffandtwinfluence(i)
       old_note[i][twinstep[i]] = note[i][twinstep[i]]
       note[i][twinstep[i]] = math.floor(12 * twin_lfo_value[i][twinstep[i]])
       if math.abs(note[i][twinstep[i]] - old_note[i][twinstep[i]]) >= 1 or params:get("twin"..i.."lfo"..twinstep[i].."amp") == 0 then 
@@ -426,11 +411,7 @@ function count_and_act()
     --ramp down
     elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 6 then
       twin_lfo_value[i][twinstep[i]] = 1 - 2 * lfo_counter[i][twinstep[i]] / (LFO_RES / params:get("twin"..i.."lfo"..twinstep[i].."rate"))
-      twin_lfo_value[i][twinstep[i]] = ((twin_lfo_value[i][twinstep[i]]
-      * params:get("twin"..i.."lfo"..twinstep[i].."amp"))
-      + (params:get("twin"..i.."lfo"..twinstep[i].."off") / 12))
-      * (1 + (params:get("twinfluence"..i) 
-      * twin_lfo_value[util.wrap(i+1,1,2)][twinstep[util.wrap(i+1,1,2)]]))
+      twin_lfo_value[i][twinstep[i]] = ampoffandtwinfluence(i)
       old_note[i][twinstep[i]] = note[i][twinstep[i]]
       note[i][twinstep[i]] = math.floor(12 * twin_lfo_value[i][twinstep[i]])
       if math.abs(note[i][twinstep[i]] - old_note[i][twinstep[i]]) >= 1 or params:get("twin"..i.."lfo"..twinstep[i].."amp") == 0 then 
@@ -439,11 +420,7 @@ function count_and_act()
     --sine
     elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 7 then
       twin_lfo_value[i][twinstep[i]] = math.sin((2 * math.pi) * lfo_counter[i][twinstep[i]]/(LFO_RES / params:get("twin"..i.."lfo"..twinstep[i].."rate")))
-      twin_lfo_value[i][twinstep[i]] = ((twin_lfo_value[i][twinstep[i]]
-      * params:get("twin"..i.."lfo"..twinstep[i].."amp"))
-      + (params:get("twin"..i.."lfo"..twinstep[i].."off") / 12))
-      * (1 + (params:get("twinfluence"..i) 
-      * twin_lfo_value[util.wrap(i+1,1,2)][twinstep[util.wrap(i+1,1,2)]]))
+      twin_lfo_value[i][twinstep[i]] = ampoffandtwinfluence(i)
       old_note[i][twinstep[i]] = note[i][twinstep[i]]
       note[i][twinstep[i]] = math.floor(12 * twin_lfo_value[i][twinstep[i]])
       if math.abs(note[i][twinstep[i]] - old_note[i][twinstep[i]]) >= 1 or params:get("twin"..i.."lfo"..twinstep[i].."amp") == 0 then 
@@ -451,6 +428,14 @@ function count_and_act()
       end
     end
   end
+end
+
+function ampoffandtwinfluence(i)
+  return ((twin_lfo_value[i][twinstep[i]]
+      * params:get("twin"..i.."lfo"..twinstep[i].."amp"))
+      + (params:get("twin"..i.."lfo"..twinstep[i].."off") / 12))
+      + ((params:get("twinfluence"..i) 
+      * twin_lfo_value[util.wrap(i+1,1,2)][twinstep[util.wrap(i+1,1,2)]]))
 end
 
 function play_lfo(note, i)
@@ -556,6 +541,7 @@ function redraw()
     screen.move(82, 60)
     screen.text(params:get("twin"..sel_lane.."lfo"..sel_lfo.."amp"))
   end
+  screen_dirty = false
   screen.update()
 end                       
  
