@@ -115,27 +115,30 @@ function init_params()
   params:add_number("midi_ch_1","midi ch twin 1",1,#midi.vports,1)
   params:add_number("midi_ch_2","midi ch twin 2",1,#midi.vports,2)
   
-  params:add_group("scale and note options", 4)
+  params:add_group("scale and note options", 6)
   params:add_option("scale","scale",SCALES,5) --dorian
   params:set_action("scale", function (x) 
     scale = music.generate_scale(params:get("root_note")-1, x, 10) 
   end)
   params:add_option("root_note", "root note", music.note_nums_to_names({0,1,2,3,4,5,6,7,8,9,10,11}),1)
-  params:add_number("note_lim_low","lower note limit", 0, 127,0)
-  params:set_action("note_lim_low", function (x)
-    if x >= params:get("note_lim_high") then
-      params:set("note_lim_low", params:get("note_lim_high"))
-    end
-  end)
-  params:add_number("note_lim_high","upper note limit", 0,127,127)
-  params:set_action("note_lim_high", function (x)
-    if x <= params:get("note_lim_low") then
-      params:set("note_lim_high", params:get("note_lim_low"))
-    end
-  end)
+  for i=1,2 do
+    params:add_number("note_lim_low_"..i,"twin "..i.." lower note limit", 0, 127,0)
+    params:set_action("note_lim_low_"..i, function (x)
+      if x >= params:get("note_lim_high_"..i) then
+        params:set("note_lim_low_"..i, params:get("note_lim_high_"..i))
+      end
+    end)
+    params:add_number("note_lim_high_"..i,"twin "..i.." upper note limit", 0,127,127)
+    params:set_action("note_lim_high_"..i, function (x)
+      if x <= params:get("note_lim_low_"..i) then
+        params:set("note_lim_high_"..i, params:get("note_lim_low_"..i))
+      end
+    end)
+  end
+  
   params:add_group("sequencer options", 6)
   for i=1,2 do
-    params:add_number("twin"..i.."div", "twin "..i.." timing 1/x", 1,48,4)
+    params:add_number("twin"..i.."div", "twin "..i.." timing 1/x", 1,16,2)
     params:set_action("twin"..i.."div", function(x)
       twin[i]:set_division(1/x)
     end)
@@ -148,7 +151,7 @@ function init_params()
     params:add_group("twin lfo "..i.." tweaks",16)
     for j=1,4 do
       params:add_option("twin"..i.."lfo"..j.."shape", "twin "..i.." lfo "..j.." shape",LFO_SHAPES,2)
-      params:add_control("twin"..i.."lfo"..j.."rate", "twin "..i.." lfo "..j.." rate", controlspec.new(0.01,10,"exp",0.001,math.random(1, 100)/10,"hz",1/1000))
+      params:add_control("twin"..i.."lfo"..j.."rate", "twin "..i.." lfo "..j.." rate", controlspec.new(0.01,10,"exp",0.001,0.66,"hz",1/1000))
       params:add_number("twin"..i.."lfo"..j.."off","twin "..i.." lfo "..j.." offset",-12,12,0)
       params:add_control("twin"..i.."lfo"..j.."amp","twin "..i.." lfo "..j.." amp",controlspec.new(0,5,"lin",0.01,1,"",1/100))
     end
@@ -319,7 +322,7 @@ function enc(n, d)
   if n == 3 then
     if ALT_KEY then
       if sel_alt_screen_edit == 1 then
-        params:set("twin"..sel_lane.."div", util.clamp(params:get("twin"..sel_lane.."div") + d, 1, 48))
+        params:set("twin"..sel_lane.."div", util.clamp(params:get("twin"..sel_lane.."div") + d, 1, 16))
       elseif sel_alt_screen_edit == 2 then
         params:set("twin"..sel_lane.."direction", util.clamp(params:get("twin"..sel_lane.."direction") + d, 1, #SEQ_OPTIONS))
       elseif sel_alt_screen_edit == 3 then
@@ -450,7 +453,7 @@ function count_and_act()
 end
 
 function play_lfo(note, i)
-  note = util.wrap(60 + note, params:get("note_lim_low"), params:get("note_lim_high"))
+  note = util.wrap(60 + note, params:get("note_lim_low_"..i), params:get("note_lim_high_"..i))
   note = music.snap_note_to_array(note, scale)
   if params:get("twin"..i.."out") == 2 then
     engine.start(i,music.note_num_to_freq(note))
