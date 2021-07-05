@@ -18,6 +18,18 @@ local SCALES = {}
 for i = 1, #music.SCALES do
   table.insert(SCALES, string.lower(music.SCALES[i].name))
 end
+local time = {
+  names = {},
+  modes = {}
+}
+for i=1,3 do
+  time["names"][i] = "/"..(5-i)
+  time["modes"][i] = 5-i
+end
+for i=1,16 do
+  time["names"][i+3] = "x"..i
+  time["modes"][i+3] = 1/i
+end
 local scale = {}
 local twin = {}
 local twinstep = {1,1}
@@ -60,8 +72,8 @@ function init()
   init_params()
   params:add_group("polysub", 19)
   polysub.params()
-  
   wsyn_add_params()
+  
   crow.output[2].action = "{to(".. 8 ..",0),to(0,".. 0.001 .. ")}"
   crow.output[4].action = "{to(".. 8 ..",0),to(0,".. 0.001 .. ")}"
  
@@ -82,15 +94,16 @@ function init()
         end
         screen_dirty = true
       end,
-      division = 1/2
+      division = time.modes[params:get("twin"..i.."div")]
     }
   end
  
   scale = music.generate_scale(params:get("root_note")-1, x, 10) 
-  local main_metro = metro.init(count_and_act, 1/LFO_RES):start()
-  clock.run(redraw_clock)
+  local main_metro = metro.init(count_and_act, 1/LFO_RES)
+  main_metro:start()
+  screen_clock = clock.run(redraw_clock)
   lat:start()
-  
+  params:bang()
 end
  
 function init_params()
@@ -139,9 +152,9 @@ function init_params()
   
   params:add_group("sequencer options", 6)
   for i=1,2 do
-    params:add_number("twin"..i.."div", "twin "..i.." timing 1/x", 1,16,2)
+    params:add_option("twin"..i.."div", "twin "..i.." speed", time.names,4)
     params:set_action("twin"..i.."div", function(x)
-      twin[i]:set_division(1/x)
+      twin[i]:set_division(time.modes[x])
     end)
     params:add_option("twin"..i.."direction", "twin "..i.." direction", SEQ_OPTIONS, 1)
     params:add_control("twinfluence"..i, "twinfluence "..i.." <- "..util.wrap(i+1,1,2), controlspec.new(0,1,"lin",0.001,0,"/ 1.0",1/100))
@@ -152,7 +165,7 @@ function init_params()
     params:add_group("twin lfo "..i.." tweaks",16)
     for j=1,4 do
       params:add_option("twin"..i.."lfo"..j.."shape", "twin "..i.." lfo "..j.." shape",LFO_SHAPES,2)
-      params:add_control("twin"..i.."lfo"..j.."rate", "twin "..i.." lfo "..j.." rate", controlspec.new(0.01,10,"exp",0.001,0.66,"hz",1/1000))
+      params:add_control("twin"..i.."lfo"..j.."rate", "twin "..i.." lfo "..j.." rate", controlspec.new(0.01,10,"exp",0.001,math.random(33,66)/100,"hz",1/1000))
       params:add_number("twin"..i.."lfo"..j.."off","twin "..i.." lfo "..j.." offset",-12,12,0)
       params:add_control("twin"..i.."lfo"..j.."amp","twin "..i.." lfo "..j.." amp",controlspec.new(0,5,"lin",0.01,1,"",1/100))
     end
@@ -307,7 +320,7 @@ function enc(n, d)
   if n == 3 then
     if ALT_KEY then
       if sel_alt_screen_edit == 1 then
-        params:set("twin"..sel_lane.."div", util.clamp(params:get("twin"..sel_lane.."div") + d, 1, 16))
+        params:set("twin"..sel_lane.."div", util.clamp(params:get("twin"..sel_lane.."div") + d, 1, #time.modes))
       elseif sel_alt_screen_edit == 2 then
         params:set("twin"..sel_lane.."direction", util.clamp(params:get("twin"..sel_lane.."direction") + d, 1, #SEQ_OPTIONS))
       elseif sel_alt_screen_edit == 3 then
@@ -489,9 +502,9 @@ function redraw()
   if ALT_KEY then
     screen.level(sel_alt_screen_edit == 1 and 15 or 2)
     screen.move(98, 40)
-    screen.text_right("timing:")
+    screen.text_right("speed:")
     screen.move(102, 40)
-    screen.text("1/"..params:get("twin"..sel_lane.."div"))
+    screen.text(time.names[params:get("twin"..sel_lane.."div")])
     screen.level(sel_alt_screen_edit == 2 and 15 or 2)
     screen.move(98, 50)
     screen.text_right("direction:")
@@ -520,7 +533,7 @@ function redraw()
     screen.text(params:get("twin"..sel_lane.."lfo"..sel_lfo.."off").." st")
     screen.level(sel_screen_edit == 4 and 15 or 2)
     screen.move(78, 60)
-    screen.text_right("amp:")
+    screen.text_right("amplitude:")
     screen.move(82, 60)
     screen.text(params:get("twin"..sel_lane.."lfo"..sel_lfo.."amp"))
   end
