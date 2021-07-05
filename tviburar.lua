@@ -87,8 +87,8 @@ function init()
   end
  
   scale = music.generate_scale(params:get("root_note")-1, x, 10) 
-  clock.run(redraw_clock)
   local main_metro = metro.init(count_and_act, 1/LFO_RES):start()
+  clock.run(redraw_clock)
   lat:start()
   
 end
@@ -359,14 +359,15 @@ function count_and_act()
 
     --square
     elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 2 then
-      if lfo_counter[i][twinstep[i]] >= LFO_RES / (2  * params:get("twin"..i.."lfo"..twinstep[i].."rate")) then
-        lfo_counter[i][twinstep[i]] = 0
-        if twin_lfo_value[i][twinstep[i]] == 0 then twin_lfo_value[i][twinstep[i]] = 1 end
-        twin_lfo_value[i][twinstep[i]] = -1 * twin_lfo_value[i][twinstep[i]]
+      twin_lfo_value[i][twinstep[i]] = math.sin((2 * math.pi) * lfo_counter[i][twinstep[i]]/(LFO_RES / params:get("twin"..i.."lfo"..twinstep[i].."rate")))
+      twin_lfo_value[i][twinstep[i]] = util.round(twin_lfo_value[i][twinstep[i]],1)
+      if twin_lfo_value[i][twinstep[i]] ~= 0 then
         twin_lfo_value[i][twinstep[i]] = ampoffandtwinfluence(i)
         old_note[i][twinstep[i]] = note[i][twinstep[i]]
         note[i][twinstep[i]] = math.floor(12 * twin_lfo_value[i][twinstep[i]])
-        play_lfo(note[i][twinstep[i]], i)
+        if math.abs(note[i][twinstep[i]] - old_note[i][twinstep[i]]) >= 1 or params:get("twin"..i.."lfo"..twinstep[i].."amp") == 0 then 
+          play_lfo(note[i][twinstep[i]], i)
+        end
       end
     
     --random
