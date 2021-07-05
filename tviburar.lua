@@ -64,7 +64,7 @@ local twin_lfo_value = {
   {1,1,1,1}
 }
 
-local LFO_RES = 100
+local lfo_res = 200
 local lfo_counter = {
   {0,0,0,0},
   {0,0,0,0}
@@ -86,6 +86,8 @@ function init()
     norns.encoders.set_sens(i,8)
   end
   crow.send("ii.wsyn.ar_mode(1)")
+  main_metro = metro.init(count_and_act, 1/lfo_res)
+  main_metro:start()
   init_params()
   params:add_group("polysub", 19)
   polysub.params()
@@ -116,8 +118,7 @@ function init()
   end
  
   scale = music.generate_scale(params:get("root_note")-1, x, 10) 
-  local main_metro = metro.init(count_and_act, 1/LFO_RES)
-  main_metro:start()
+  
   screen_clock = clock.run(redraw_clock)
   lat:start()
   params:bang()
@@ -182,7 +183,7 @@ function init_params()
     params:add_group("twin lfo "..i.." tweaks",16)
     for j=1,4 do
       params:add_option("twin"..i.."lfo"..j.."shape", "twin "..i.." lfo "..j.." shape",LFO_SHAPES,2)
-      params:add_control("twin"..i.."lfo"..j.."rate", "twin "..i.." lfo "..j.." rate", controlspec.new(0.01,10,"exp",0.001,math.random(33,66)/100,"hz",1/1000))
+      params:add_control("twin"..i.."lfo"..j.."rate", "twin "..i.." lfo "..j.." rate", controlspec.new(0.01,20,"exp",0.001,math.random(33,66)/100,"hz",1/1000))
       params:add_number("twin"..i.."lfo"..j.."off","twin "..i.." lfo "..j.." offset",-12,12,0)
       params:add_control("twin"..i.."lfo"..j.."amp","twin "..i.." lfo "..j.." amp",controlspec.new(0,5,"lin",0.01,1,"",1/100))
     end
@@ -347,7 +348,7 @@ function enc(n, d)
       if sel_screen_edit == 1 then
         params:set("twin"..sel_lane.."lfo"..sel_lfo.."shape", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."shape") + d, 1, #LFO_SHAPES))
       elseif sel_screen_edit == 2 then
-        params:set("twin"..sel_lane.."lfo"..sel_lfo.."rate", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."rate") + d/100, 0.01, 10))
+        params:set("twin"..sel_lane.."lfo"..sel_lfo.."rate", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."rate") + d/100, 0.01, 20))
       elseif sel_screen_edit == 3 then
         params:set("twin"..sel_lane.."lfo"..sel_lfo.."off", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."off") + d, -12, 12))
       elseif sel_screen_edit == 4 then
@@ -362,7 +363,7 @@ function count_and_act()
   for i=1,2 do
     for j=1,4 do
       lfo_counter[i][j] = lfo_counter[i][j] + 1 --advance all lfos
-      if lfo_counter[i][j] >= (LFO_RES / params:get("twin"..i.."lfo"..j.."rate")) then
+      if lfo_counter[i][j] >= (lfo_res / params:get("twin"..i.."lfo"..j.."rate")) then
         lfo_counter[i][j] = 0
       end
     end
@@ -373,7 +374,7 @@ function count_and_act()
 
     --square
     elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 2 then
-      twin_lfo_value[i][twinstep[i]] = math.sin((2 * math.pi) * lfo_counter[i][twinstep[i]]/(LFO_RES / params:get("twin"..i.."lfo"..twinstep[i].."rate")))
+      twin_lfo_value[i][twinstep[i]] = math.sin((2 * math.pi) * lfo_counter[i][twinstep[i]]/(lfo_res / params:get("twin"..i.."lfo"..twinstep[i].."rate")))
       twin_lfo_value[i][twinstep[i]] = util.round(twin_lfo_value[i][twinstep[i]],1)
       if twin_lfo_value[i][twinstep[i]] ~= 0 then
         twin_lfo_value[i][twinstep[i]] = ampoffandtwinfluence(i)
@@ -399,10 +400,10 @@ function count_and_act()
 
     --triangle
     elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 4 then
-      if lfo_counter[i][twinstep[i]] <= LFO_RES / (2*params:get("twin"..i.."lfo"..twinstep[i].."rate")) then
-        twin_lfo_value[i][twinstep[i]] = 4 * lfo_counter[i][twinstep[i]] / (LFO_RES / params:get("twin"..i.."lfo"..twinstep[i].."rate")) - 1
+      if lfo_counter[i][twinstep[i]] <= lfo_res / (2*params:get("twin"..i.."lfo"..twinstep[i].."rate")) then
+        twin_lfo_value[i][twinstep[i]] = 4 * lfo_counter[i][twinstep[i]] / (lfo_res / params:get("twin"..i.."lfo"..twinstep[i].."rate")) - 1
       else
-        twin_lfo_value[i][twinstep[i]] = 3 - 4 * lfo_counter[i][twinstep[i]] / (LFO_RES / params:get("twin"..i.."lfo"..twinstep[i].."rate"))
+        twin_lfo_value[i][twinstep[i]] = 3 - 4 * lfo_counter[i][twinstep[i]] / (lfo_res / params:get("twin"..i.."lfo"..twinstep[i].."rate"))
       end
       twin_lfo_value[i][twinstep[i]] = ampoffandtwinfluence(i)
       old_note[i][twinstep[i]] = note[i][twinstep[i]]
@@ -414,7 +415,7 @@ function count_and_act()
 
     --ramp up
     elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 5 then
-      twin_lfo_value[i][twinstep[i]] = 2 * lfo_counter[i][twinstep[i]] / (LFO_RES / params:get("twin"..i.."lfo"..twinstep[i].."rate")) - 1
+      twin_lfo_value[i][twinstep[i]] = 2 * lfo_counter[i][twinstep[i]] / (lfo_res / params:get("twin"..i.."lfo"..twinstep[i].."rate")) - 1
       twin_lfo_value[i][twinstep[i]] = ampoffandtwinfluence(i)
       old_note[i][twinstep[i]] = note[i][twinstep[i]]
       note[i][twinstep[i]] = math.floor(12 * twin_lfo_value[i][twinstep[i]])
@@ -424,7 +425,7 @@ function count_and_act()
 
     --ramp down
     elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 6 then
-      twin_lfo_value[i][twinstep[i]] = 1 - 2 * lfo_counter[i][twinstep[i]] / (LFO_RES / params:get("twin"..i.."lfo"..twinstep[i].."rate"))
+      twin_lfo_value[i][twinstep[i]] = 1 - 2 * lfo_counter[i][twinstep[i]] / (lfo_res / params:get("twin"..i.."lfo"..twinstep[i].."rate"))
       twin_lfo_value[i][twinstep[i]] = ampoffandtwinfluence(i)
       old_note[i][twinstep[i]] = note[i][twinstep[i]]
       note[i][twinstep[i]] = math.floor(12 * twin_lfo_value[i][twinstep[i]])
@@ -433,7 +434,7 @@ function count_and_act()
       end
     --sine
     elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 7 then
-      twin_lfo_value[i][twinstep[i]] = math.sin((2 * math.pi) * lfo_counter[i][twinstep[i]]/(LFO_RES / params:get("twin"..i.."lfo"..twinstep[i].."rate")))
+      twin_lfo_value[i][twinstep[i]] = math.sin((2 * math.pi) * lfo_counter[i][twinstep[i]]/(lfo_res / params:get("twin"..i.."lfo"..twinstep[i].."rate")))
       twin_lfo_value[i][twinstep[i]] = ampoffandtwinfluence(i)
       old_note[i][twinstep[i]] = note[i][twinstep[i]]
       note[i][twinstep[i]] = math.floor(12 * twin_lfo_value[i][twinstep[i]])
