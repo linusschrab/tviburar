@@ -35,7 +35,7 @@ local twin_lfo_value = {
   {1,1,1,1}
 }
 
-local LFO_RES = 250
+local LFO_RES = 100
 local lfo_counter = {
   {0,0,0,0},
   {0,0,0,0}
@@ -364,7 +364,6 @@ function count_and_act()
         if twin_lfo_value[i][twinstep[i]] == 0 then twin_lfo_value[i][twinstep[i]] = 1 end
         twin_lfo_value[i][twinstep[i]] = -1 * twin_lfo_value[i][twinstep[i]]
         twin_lfo_value[i][twinstep[i]] = ampoffandtwinfluence(i)
-        * twin_lfo_value[util.wrap(i+1,1,2)][twinstep[util.wrap(i+1,1,2)]]))
         old_note[i][twinstep[i]] = note[i][twinstep[i]]
         note[i][twinstep[i]] = math.floor(12 * twin_lfo_value[i][twinstep[i]])
         play_lfo(note[i][twinstep[i]], i)
@@ -470,7 +469,7 @@ end
  
 function redraw_clock()
   while true do
-    clock.sleep(1/30)
+    clock.sleep(1/15)
     if screen_dirty then
       redraw()
       screen_dirty = false
