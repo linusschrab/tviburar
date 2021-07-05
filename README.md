@@ -14,4 +14,4 @@ E3 - adjust selected value
 K1/K2/K3 are held (choose your preference) as "alt." to change lanes and lane settings.
 
 tviburar is a script for monome norns, written by Filip Forsström (@ljudvagg) and Linus Schrab (@vicimity).
-The script is based on an original concept built by Filip on a Nord Modular G2.
+The script is based on an original concept built by Filip for the Nord Modular G2.
