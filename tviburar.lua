@@ -276,22 +276,6 @@ function wsyn_add_params()
       params:set("wsyn_lpg_symmetry", math.random(-50, 50)/10)
     end
   }
-  params:add{
-    type = "trigger",
-    id = "wsyn_init",
-    name = "Init",
-    action = function()
-      params:set("wsyn_curve", pset_wsyn_curve)
-      params:set("wsyn_ramp", pset_wsyn_ramp)
-      params:set("wsyn_fm_index", pset_wsyn_fm_index)
-      params:set("wsyn_fm_env", pset_wsyn_fm_env)
-      params:set("wsyn_fm_ratio_num", pset_wsyn_fm_ratio_num)
-      params:set("wsyn_fm_ratio_den", pset_wsyn_fm_ratio_den)
-      params:set("wsyn_lpg_time", pset_wsyn_lpg_time)
-      params:set("wsyn_lpg_symmetry", pset_wsyn_lpg_symmetry)
-    end
-  }
-  params:hide("wsyn_init")
 end
 
 function key(k, z)
@@ -473,7 +457,6 @@ function redraw_clock()
     clock.sleep(1/15)
     if screen_dirty then
       redraw()
-      screen_dirty = false
     end
   end
 end
