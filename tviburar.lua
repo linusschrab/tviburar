@@ -3,17 +3,21 @@
 -- @vicimity (linus schrab)
 -- & @ljudvagg (filip forsstrom)
 --
--- dual lane four step 
--- sequencer with eight 
+-- dual lane four step
+-- inter influencing 
+-- sequencers with eight 
 -- free running lfo's 
 -- generating notes
--- in a musical manner.
+-- in a more or less
+-- musical manner.
 --
 -- E1 scroll lfos (alt. lanes)
 -- E2 scroll settings
 -- E3 edit values
--- K1/K2/K3 is alt. (access 
+-- K3 halt on step
+-- K2 is alt. (access 
 -- sequencer options) 
+-- K2 (hold) + K3 jump to step 1
 
 local lattice = require("lattice")
 local music = require("musicutil")
@@ -23,13 +27,15 @@ engine.name = "PolySub"
 local m = midi.connect(1)
  
 local lat = lattice:new()
-local LFO_SHAPES = {"mute", "square", "random", "triangle", "ramp up", "ramp down", "sine"}
+--local LFO_SHAPES = {"mute", "square", "random", "triangle", "ramp up", "ramp down", "sine"}
+local LFO_SHAPES = {"mute", "square", "random", "ramp up", "ramp down", "sine"}
 local SEQ_OPTIONS = {"->", "<-", ">-<", "~"}
 local SCREEN_EDITS = {"shape", "rate", "off", "amp"}
 local sel_screen_edit = 1
 local ALT_SCREEN_EDITS = {"timing", "direction", "twinfluence"}
 local sel_alt_screen_edit = 1
 local ALT_KEY = false
+local SEQ_HALT = false
 local pend_dir = {1, 1}
 local SCALES = {}
 for i = 1, #music.SCALES do
@@ -82,7 +88,7 @@ local sel_lane = 1
  
 function init()
   for i=1,3 do
-    --norns.encoders.set_accel(i,false)
+    norns.encoders.set_accel(i,true)
     norns.encoders.set_sens(i,8)
   end
   crow.send("ii.wsyn.ar_mode(1)")
@@ -93,23 +99,25 @@ function init()
   polysub.params()
   wsyn_add_params()
   
-  crow.output[2].action = "{to(".. 8 ..",0),to(0,".. 0.001 .. ")}"
-  crow.output[4].action = "{to(".. 8 ..",0),to(0,".. 0.001 .. ")}"
+  crow.output[2].action = "{to(".. 8 ..",0),to(0,".. 0.03 .. ")}"
+  crow.output[4].action = "{to(".. 8 ..",0),to(0,".. 0.03 .. ")}"
  
   for i=1,2 do
     twin[i] = lat:new_pattern{
       action = function (x)
-        if params:get("twin"..i.."direction") == 1 then --forward
-          twinstep[i] = util.wrap(twinstep[i] + 1,1,4)
-        elseif params:get("twin"..i.."direction") == 2 then --backwards
-          twinstep[i] = util.wrap(twinstep[i] - 1,1,4)
-        elseif params:get("twin"..i.."direction") == 3 then --pendulum
-          if (twinstep[i] == 4 and pend_dir[i] == 1) or (twinstep[i] == 1 and pend_dir[i] == -1) then
-            pend_dir[i] = pend_dir[i] * -1
+        if SEQ_HALT == false then
+          if params:get("twin"..i.."direction") == 1 then --forward
+            twinstep[i] = util.wrap(twinstep[i] + 1,1,4)
+          elseif params:get("twin"..i.."direction") == 2 then --backwards
+            twinstep[i] = util.wrap(twinstep[i] - 1,1,4)
+          elseif params:get("twin"..i.."direction") == 3 then --pendulum
+            if (twinstep[i] == 4 and pend_dir[i] == 1) or (twinstep[i] == 1 and pend_dir[i] == -1) then
+              pend_dir[i] = pend_dir[i] * -1
+            end
+            twinstep[i] = util.wrap(twinstep[i] + pend_dir[i],1,4)
+          elseif params:get("twin"..i.."direction") == 4 then --random
+            twinstep[i] = math.random(1,4)
           end
-          twinstep[i] = util.wrap(twinstep[i] + pend_dir[i],1,4)
-        elseif params:get("twin"..i.."direction") == 4 then --random
-          twinstep[i] = math.random(1,4)
         end
         screen_dirty = true
       end,
@@ -170,7 +178,7 @@ function init_params()
   
   params:add_group("sequencer options", 6)
   for i=1,2 do
-    params:add_option("twin"..i.."div", "twin "..i.." speed", time.names,4)
+    params:add_option("twin"..i.."div", "twin "..i.." speed", time.names,5)
     params:set_action("twin"..i.."div", function(x)
       twin[i]:set_division(time.modes[x])
     end)
@@ -183,7 +191,7 @@ function init_params()
     params:add_group("twin lfo "..i.." tweaks",16)
     for j=1,4 do
       params:add_option("twin"..i.."lfo"..j.."shape", "twin "..i.." lfo "..j.." shape",LFO_SHAPES,2)
-      params:add_control("twin"..i.."lfo"..j.."rate", "twin "..i.." lfo "..j.." rate", controlspec.new(0.01,20,"exp",0.001,math.random(33,66)/100,"hz",1/1000))
+      params:add_control("twin"..i.."lfo"..j.."rate", "twin "..i.." lfo "..j.." rate", controlspec.new(0.01,15,"exp",0.001,math.random(33,66)/100,"hz",1/1000))
       params:add_number("twin"..i.."lfo"..j.."off","twin "..i.." lfo "..j.." offset",-12,12,0)
       params:add_control("twin"..i.."lfo"..j.."amp","twin "..i.." lfo "..j.." amp",controlspec.new(0,5,"lin",0.01,1,"",1/100))
     end
@@ -310,11 +318,22 @@ function wsyn_add_params()
 end
 
 function key(k, z)
-  if (k == 1 or k == 2 or k == 3) and z == 1 then
+  if (k == 2) and z == 1 then
     ALT_KEY = true
-  elseif (k == 1 or k == 2 or k == 3) and z == 0 then
+  elseif (k == 2) and z == 0 then
     ALT_KEY = false
   end
+  if ALT_KEY and k == 3 and z == 1 then
+    for i=1,2 do
+      twinstep[i] = 1
+    end
+  end
+  if k == 3 and z == 1 then
+    SEQ_HALT = true
+  else
+    SEQ_HALT = false
+  end
+  
   screen_dirty = true
 end
 
@@ -348,7 +367,7 @@ function enc(n, d)
       if sel_screen_edit == 1 then
         params:set("twin"..sel_lane.."lfo"..sel_lfo.."shape", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."shape") + d, 1, #LFO_SHAPES))
       elseif sel_screen_edit == 2 then
-        params:set("twin"..sel_lane.."lfo"..sel_lfo.."rate", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."rate") + d/100, 0.01, 20))
+        params:set("twin"..sel_lane.."lfo"..sel_lfo.."rate", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."rate") + d/100, 0.01, 15))
       elseif sel_screen_edit == 3 then
         params:set("twin"..sel_lane.."lfo"..sel_lfo.."off", util.clamp(params:get("twin"..sel_lane.."lfo"..sel_lfo.."off") + d, -12, 12))
       elseif sel_screen_edit == 4 then
@@ -399,22 +418,22 @@ function count_and_act()
       end
 
     --triangle
-    elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 4 then
-      if lfo_counter[i][twinstep[i]] <= lfo_res / (2*params:get("twin"..i.."lfo"..twinstep[i].."rate")) then
-        twin_lfo_value[i][twinstep[i]] = 4 * lfo_counter[i][twinstep[i]] / (lfo_res / params:get("twin"..i.."lfo"..twinstep[i].."rate")) - 1
-      else
-        twin_lfo_value[i][twinstep[i]] = 3 - 4 * lfo_counter[i][twinstep[i]] / (lfo_res / params:get("twin"..i.."lfo"..twinstep[i].."rate"))
-      end
-      twin_lfo_value[i][twinstep[i]] = ampoffandtwinfluence(i)
-      old_note[i][twinstep[i]] = note[i][twinstep[i]]
-      note[i][twinstep[i]] = math.floor(12 * twin_lfo_value[i][twinstep[i]])
-      if math.abs(note[i][twinstep[i]] - old_note[i][twinstep[i]]) >= 1 or params:get("twin"..i.."lfo"..twinstep[i].."amp") == 0 then 
-        play_lfo(note[i][twinstep[i]], i)
-      end
+    --elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 4 then
+    --  if lfo_counter[i][twinstep[i]] <= lfo_res / (2*params:get("twin"..i.."lfo"..twinstep[i].."rate")) then
+    --    twin_lfo_value[i][twinstep[i]] = 4 * lfo_counter[i][twinstep[i]] / (lfo_res / params:get("twin"..i.."lfo"..twinstep[i].."rate")) - 1
+    --  else
+    --    twin_lfo_value[i][twinstep[i]] = 3 - 4 * lfo_counter[i][twinstep[i]] / (lfo_res / params:get("twin"..i.."lfo"..twinstep[i].."rate"))
+    --  end
+    --  twin_lfo_value[i][twinstep[i]] = ampoffandtwinfluence(i)
+    --  old_note[i][twinstep[i]] = note[i][twinstep[i]]
+    --  note[i][twinstep[i]] = math.floor(12 * twin_lfo_value[i][twinstep[i]])
+    --  if math.abs(note[i][twinstep[i]] - old_note[i][twinstep[i]]) >= 1 or params:get("twin"..i.."lfo"..twinstep[i].."amp") == 0 then 
+    --    play_lfo(note[i][twinstep[i]], i)
+    --  end
 
 
     --ramp up
-    elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 5 then
+    elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 4 then
       twin_lfo_value[i][twinstep[i]] = 2 * lfo_counter[i][twinstep[i]] / (lfo_res / params:get("twin"..i.."lfo"..twinstep[i].."rate")) - 1
       twin_lfo_value[i][twinstep[i]] = ampoffandtwinfluence(i)
       old_note[i][twinstep[i]] = note[i][twinstep[i]]
@@ -424,7 +443,7 @@ function count_and_act()
       end
 
     --ramp down
-    elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 6 then
+    elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 5 then
       twin_lfo_value[i][twinstep[i]] = 1 - 2 * lfo_counter[i][twinstep[i]] / (lfo_res / params:get("twin"..i.."lfo"..twinstep[i].."rate"))
       twin_lfo_value[i][twinstep[i]] = ampoffandtwinfluence(i)
       old_note[i][twinstep[i]] = note[i][twinstep[i]]
@@ -433,7 +452,7 @@ function count_and_act()
         play_lfo(note[i][twinstep[i]], i)
       end
     --sine
-    elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 7 then
+    elseif params:get("twin"..i.."lfo"..twinstep[i].."shape") == 6 then
       twin_lfo_value[i][twinstep[i]] = math.sin((2 * math.pi) * lfo_counter[i][twinstep[i]]/(lfo_res / params:get("twin"..i.."lfo"..twinstep[i].."rate")))
       twin_lfo_value[i][twinstep[i]] = ampoffandtwinfluence(i)
       old_note[i][twinstep[i]] = note[i][twinstep[i]]
