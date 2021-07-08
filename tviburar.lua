@@ -25,6 +25,9 @@ local polysub = include 'we/lib/polysub'
 engine.name = "PolySub"
 
 local m = midi.connect(1)
+
+local IP = "192.168.1.1"
+local dest = {IP, 666}
  
 local lat = lattice:new()
 --local LFO_SHAPES = {"mute", "square", "random", "triangle", "ramp up", "ramp down", "sine"}
@@ -134,14 +137,14 @@ end
  
 function init_params()
   params:add_group("midi & outputs", 5)
-  params:add_option("twin1out", "twin 1 output", {"mute", "polysub", "midi", "crow 1/2", "w/syn", "jf"}, 2)
+  params:add_option("twin1out", "twin 1 output", {"mute", "polysub", "midi", "crow 1/2", "w/syn", "jf", "osc"}, 2)
   params:set_action("twin1out", function(x)
     for i=0,127 do
       m:note_off(i,100,params:get("midi_ch_1"))
     end
     if x == 6 then crow.ii.jf.mode(1) else crow.ii.jf.mode(0) end
   end)
-  params:add_option("twin2out", "twin 2 output", {"mute", "polysub", "midi", "crow 3/4", "w/syn", "jf"}, 1)
+  params:add_option("twin2out", "twin 2 output", {"mute", "polysub", "midi", "crow 3/4", "w/syn", "jf", "osc"}, 1)
   params:set_action("twin2out", function(x)
     for i=0,127 do
       m:note_off(i,100,params:get("midi_ch_2"))
@@ -492,6 +495,8 @@ function play_lfo(note, i)
     crow.send("ii.wsyn.play_note(".. ((note)-60)/12 ..", " .. params:get("wsyn_vel") .. ")")
   elseif params:get("twin"..i.."out") == 6 then
     crow.ii.jf.play_note(((note)-60)/12,5)
+  elseif params:get("twin"..i.."out") == 7 then
+    osc.send(dest, "/note", {note})  
   end
 end
 
