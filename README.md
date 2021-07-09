@@ -14,7 +14,7 @@ Tviburar boots up in a calm state with four square wave LFOs outputting notes to
  - crow
  - w/syn
  - jf
- - osc (via the companion m4l-device)
+ - osc ([via the companion M4L-device](https://maxforlive.com/library/device/7451/tviburar-osc-to-midi))
 
 Return to the scripts main screen and scroll through the sequencer steps with E1. E2 takes you through the avaiable LFO settings and E3 changes the selected value. The currently selected LFO is shown with a line above or below the selected step.
 To edit the second lane (twin 2) hold down the alt key, K2 and scroll with E1. The currently active lane is shown with a line to the left of the sequencer lane. As with the LFOs, the lanes have settings that are accessible in the same manner as the LFOs. E2 scrolls through the avalable settings and E3 changes its value.
