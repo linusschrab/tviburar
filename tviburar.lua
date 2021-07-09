@@ -26,7 +26,7 @@ engine.name = "PolySub"
 
 local m = midi.connect(1)
 
-osc_dest = {"1.1.1.1", 666} --change this in matron or enter your computers IP here
+osc_dest = {"1.1.1.1", 10101} --change this in matron or enter your computers IP here
  
 local lat = lattice:new()
 --local LFO_SHAPES = {"mute", "square", "random", "triangle", "ramp up", "ramp down", "sine"}
