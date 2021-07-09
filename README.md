@@ -20,7 +20,7 @@ Return to the scripts main screen and scroll through the sequencer steps with E1
 To edit the second lane (twin 2) hold down the alt key, K2 and scroll with E1. The currently active lane is shown with a line to the left of the sequencer lane. As with the LFOs, the lanes have settings that are accessible in the same manner as the LFOs. E2 scrolls through the avalable settings and E3 changes its value.
 The third setting for lanes "twinfluence" is secret sauce. It amplifies the influence between the two sequencers LFOs, creating complex waveforms for the ramp and sine LFOs and altering the note value, offset and amp for square and random. 
 
-The double nature of Tviburar can be used to sequence two destinations, internal modulation or both at the same time.
+The dual nature of Tviburar can be used to sequence two destinations, internal modulation or both at the same time.
 
 ## Installation
 Enter `;install https://github.com/linusschrab/tviburar` in Matron or via Maidens script library.
