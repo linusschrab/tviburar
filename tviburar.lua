@@ -26,8 +26,7 @@ engine.name = "PolySub"
 
 local m = midi.connect(1)
 
-local IP = "192.168.1.1"
-local dest = {IP, 666}
+osc_dest = {"1.1.1.1", 666} --change this in matron or enter your computers IP here
  
 local lat = lattice:new()
 --local LFO_SHAPES = {"mute", "square", "random", "triangle", "ramp up", "ramp down", "sine"}
@@ -496,7 +495,7 @@ function play_lfo(note, i)
   elseif params:get("twin"..i.."out") == 6 then
     crow.ii.jf.play_note(((note)-60)/12,5)
   elseif params:get("twin"..i.."out") == 7 then
-    osc.send(dest, "/note", {note})  
+    osc.send(osc_dest, "/note", {note})  
   end
 end
 
