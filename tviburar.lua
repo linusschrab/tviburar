@@ -322,6 +322,13 @@ function wsyn_add_params()
   }
 end
 
+function osc_in(path, args, from)
+  if path == "/connectOSC" and args[1] == 1 then
+    osc_dest = {from[1], 666}
+    osc.send(osc_dest, "/connected", {1})
+  end
+end
+
 function key(k, z)
   if (k == 2) and z == 1 then
     ALT_KEY = true
