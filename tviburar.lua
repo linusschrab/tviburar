@@ -135,15 +135,15 @@ function init()
 end
  
 function init_params()
-  params:add_group("midi & outputs", 5)
-  params:add_option("twin1out", "twin 1 output", {"mute", "polysub", "midi", "crow 1/2", "w/syn", "jf", "osc", "midi cc"}, 2)
+  params:add_group("midi & outputs", 7)
+  params:add_option("twin1out", "twin 1 output", {"mute", "polysub", "midi", "midi cc", "crow 1/2", "w/syn", "jf", "osc"}, 2)
   params:set_action("twin1out", function(x)
     for i=0,127 do
       m:note_off(i,100,params:get("midi_ch_1"))
     end
     if x == 6 then crow.ii.jf.mode(1) else crow.ii.jf.mode(0) end
   end)
-  params:add_option("twin2out", "twin 2 output", {"mute", "polysub", "midi", "crow 3/4", "w/syn", "jf", "osc", "midi cc"}, 1)
+  params:add_option("twin2out", "twin 2 output", {"mute", "polysub", "midi", "midi cc", "crow 3/4", "w/syn", "jf", "osc"}, 1)
   params:set_action("twin2out", function(x)
     for i=0,127 do
       m:note_off(i,100,params:get("midi_ch_2"))
@@ -156,6 +156,8 @@ function init_params()
   end)
   params:add_number("midi_ch_1","midi ch twin 1",1,#midi.vports,1)
   params:add_number("midi_ch_2","midi ch twin 2",1,#midi.vports,2)
+  params:add_number("midi_cc_1","midi cc twin 1",1,128,54)
+  params:add_number("midi_cc_2","midi cc twin 2",1,128,2)
   
   params:add_group("scale and note options", 6)
   params:add_option("scale","scale",SCALES,5) --dorian
@@ -495,18 +497,17 @@ function play_lfo(note, i)
     m:note_on(note,100,params:get("midi_ch_"..i))
     clock.run(midihang, note, ch, i)
   elseif params:get("twin"..i.."out") == 4 then
+     local ccval = math.floor(util.linlin(-1, 1, 0, 128, twin_lfo_value[i][1])) -- FIXME hardcoded indexing of the LFO array for development
+     m:cc(params:get("midi_cc_"..i), ccval, params:get("midi_ch_"..i))
+  elseif params:get("twin"..i.."out") == 5 then
     crow.output[(i-1)*2 + 1].volts = (((note)-60)/12)
     crow.output[(i-1)*2 + 2]()
-  elseif params:get("twin"..i.."out") == 5 then
-    crow.send("ii.wsyn.play_note(".. ((note)-60)/12 ..", " .. params:get("wsyn_vel") .. ")")
   elseif params:get("twin"..i.."out") == 6 then
-    crow.ii.jf.play_note(((note)-60)/12,5)
+    crow.send("ii.wsyn.play_note(".. ((note)-60)/12 ..", " .. params:get("wsyn_vel") .. ")")
   elseif params:get("twin"..i.."out") == 7 then
-    osc.send(osc_dest, "/note", {note})
+    crow.ii.jf.play_note(((note)-60)/12,5)
   elseif params:get("twin"..i.."out") == 8 then
-     local ccval = math.floor(util.linlin(-1, 1, 0, 128, twin_lfo_value[i][1])) -- FIXME hardcoded indexing of the LFO array for development
-     print("lfo val "..twin_lfo_value[i][1].." -> "..ccval)
-     m:cc(53, ccval, params:get("midi_ch_"..i)) -- FIXME hardcoded cc for development
+    osc.send(osc_dest, "/note", {note})
   end
 end
 
