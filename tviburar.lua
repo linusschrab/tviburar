@@ -497,8 +497,8 @@ function play_lfo(note, i)
     m:note_on(note,100,params:get("midi_ch_"..i))
     clock.run(midihang, note, ch, i)
   elseif params:get("twin"..i.."out") == 4 then
-     local ccval = math.floor(util.linlin(-1, 1, 0, 128, twin_lfo_value[i][1])) -- FIXME hardcoded indexing of the LFO array for development
-     m:cc(params:get("midi_cc_"..i), ccval, params:get("midi_ch_"..i))
+    local ccval = math.floor(util.linlin(-24, 24, 0, 128, note-60))
+    m:cc(params:get("midi_cc_"..i), ccval, params:get("midi_ch_"..i))
   elseif params:get("twin"..i.."out") == 5 then
     crow.output[(i-1)*2 + 1].volts = (((note)-60)/12)
     crow.output[(i-1)*2 + 2]()
