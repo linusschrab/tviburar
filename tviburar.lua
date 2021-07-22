@@ -156,8 +156,8 @@ function init_params()
   end)
   params:add_number("midi_ch_1","midi ch twin 1",1,#midi.vports,1)
   params:add_number("midi_ch_2","midi ch twin 2",1,#midi.vports,2)
-  params:add_number("midi_cc_1","midi cc twin 1",1,128,54)
-  params:add_number("midi_cc_2","midi cc twin 2",1,128,2)
+  params:add_number("midi_cc_1","midi cc twin 1",0,127,14)
+  params:add_number("midi_cc_2","midi cc twin 2",0,127,15)
   
   params:add_group("scale and note options", 6)
   params:add_option("scale","scale",SCALES,5) --dorian
@@ -497,7 +497,7 @@ function play_lfo(note, i)
     m:note_on(note,100,params:get("midi_ch_"..i))
     clock.run(midihang, note, ch, i)
   elseif params:get("twin"..i.."out") == 4 then
-    local ccval = math.floor(util.linlin(-24, 24, 0, 128, note-60))
+    local ccval = math.floor(util.linlin(-24, 24, 0, 127, note-60))
     m:cc(params:get("midi_cc_"..i), ccval, params:get("midi_ch_"..i))
   elseif params:get("twin"..i.."out") == 5 then
     crow.output[(i-1)*2 + 1].volts = (((note)-60)/12)
