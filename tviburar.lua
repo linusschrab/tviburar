@@ -135,21 +135,8 @@ function init()
 end
  
 function init_params()
-  params:add_group("midi & outputs", 7)
-  params:add_option("twin1out", "twin 1 output", {"mute", "polysub", "midi", "midi cc", "crow 1/2", "w/syn", "jf", "osc"}, 2)
-  params:set_action("twin1out", function(x)
-    for i=0,127 do
-      m:note_off(i,100,params:get("midi_ch_1"))
-    end
-    if x == 6 then crow.ii.jf.mode(1) else crow.ii.jf.mode(0) end
-  end)
-  params:add_option("twin2out", "twin 2 output", {"mute", "polysub", "midi", "midi cc", "crow 3/4", "w/syn", "jf", "osc"}, 1)
-  params:set_action("twin2out", function(x)
-    for i=0,127 do
-      m:note_off(i,100,params:get("midi_ch_2"))
-    end
-    if x == 6 then crow.ii.jf.mode(1) else crow.ii.jf.mode(0) end
-  end)
+  params:add_group("midi & outputs", 24)
+  params:add_separator("midi")
   params:add_number("mididevice","midi device",1,#midi.vports,1)
   params:set_action("mididevice", function (x)
     m = midi.connect(x)
@@ -158,6 +145,38 @@ function init_params()
   params:add_number("midi_ch_2","midi ch twin 2",1,#midi.vports,2)
   params:add_number("midi_cc_1","midi cc twin 1",0,127,14)
   params:add_number("midi_cc_2","midi cc twin 2",0,127,15)
+  for i=1,2 do
+    params:add_separator("twin"..i.." outputs")
+    params:add_option("twin"..i.."engine", "twin"..i.." -> engine", {"no", "yes"}, 2)
+    params:add_option("twin"..i.."midi_note", "twin"..i.." -> midi note", {"no", "yes"}, 2)
+    params:set_action("twin"..i.."midi_note", function(x)
+      for i=0,127 do
+        m:note_off(i,100,params:get("midi_ch_1"))
+        m:note_off(i,100,params:get("midi_ch_2"))
+      end
+    end)
+    params:add_option("twin"..i.."midi_CC", "twin"..i.." -> midi cc", {"no", "yes"}, 1)
+    params:add_option("twin"..i.."crow_1", "twin"..i.." -> crow 1/2", {"no", "yes"}, 1)
+--[[     params:set_action("twin"..i.."crow_1", function (x)
+      crow.output[2].action = "{to(".. crow_gate_volts ..",0),to(0,".. crow_gate_length .. ")}" 
+    end) ]]
+    params:add_option("twin"..i.."crow_2", "twin"..i.." -> crow 3/4", {"no", "yes"}, 1)
+--[[     params:set_action("twin"..i.."crow_2", function (x)
+      crow.output[4].action = "{to(".. crow_gate_volts ..",0),to(0,".. crow_gate_length .. ")}" 
+    end) ]]
+    params:add_option("twin"..i.."JF", "twin"..i.." -> JF", {"no", "yes"}, 1)
+    --[[ params:set_action("twin"..i.."JF", function(x)
+      if params:get("twin".. util.wrap(i+1,1,4) .."JF") == 1 or params:get("twin".. util.wrap(i+2,1,4) .."JF") == 1 or params:get("twin".. util.wrap(i+3,1,4) .."JF") == 1 then
+        if x == 2 then
+          crow.ii.jf.mode(1)
+        else
+          crow.ii.jf.mode(0)
+        end
+      end
+    end) ]]
+    params:add_option("twin"..i.."w", "twin"..i.." -> w/syn", {"no", "yes"}, 1)
+    params:add_option("twin"..i.."OSC", "twin"..i.." -> OSC", {"no", "yes"}, 1)
+  end
   
   params:add_group("scale and note options", 6)
   params:add_option("scale","scale",SCALES,5) --dorian
@@ -489,24 +508,34 @@ end
 function play_lfo(note, i)
   note = util.wrap(60 + note, params:get("note_lim_low_"..i), params:get("note_lim_high_"..i))
   note = music.snap_note_to_array(note, scale)
-  if params:get("twin"..i.."out") == 2 then
+  if params:get("twin"..i.."engine") == 2 then
     engine.start(i,music.note_num_to_freq(note))
     clock.run(eng_hang, note, i)
-  elseif params:get("twin"..i.."out") == 3 then
+  end  
+  if params:get("twin"..i.."midi_note") == 2 then
     m:note_off(note,100,params:get("midi_ch_"..i))
     m:note_on(note,100,params:get("midi_ch_"..i))
     clock.run(midihang, note, ch, i)
-  elseif params:get("twin"..i.."out") == 4 then
+  end
+  if params:get("twin"..i.."midi_CC") == 2 then
     local ccval = math.floor(util.linlin(-24, 24, 0, 127, note-60))
     m:cc(params:get("midi_cc_"..i), ccval, params:get("midi_ch_"..i))
-  elseif params:get("twin"..i.."out") == 5 then
+  end
+  if params:get("twin"..i.."crow_1") == 2 then
     crow.output[(i-1)*2 + 1].volts = (((note)-60)/12)
     crow.output[(i-1)*2 + 2]()
-  elseif params:get("twin"..i.."out") == 6 then
-    crow.send("ii.wsyn.play_note(".. ((note)-60)/12 ..", " .. params:get("wsyn_vel") .. ")")
-  elseif params:get("twin"..i.."out") == 7 then
+  end
+  if params:get("twin"..i.."crow_2") == 2 then
+    crow.output[(i-1)*2 + 1].volts = (((note)-60)/12)
+    crow.output[(i-1)*2 + 2]()
+  end
+  if params:get("twin"..i.."JF") == 2 then
     crow.ii.jf.play_note(((note)-60)/12,5)
-  elseif params:get("twin"..i.."out") == 8 then
+  end
+  if params:get("twin"..i.."w") == 2 then
+    crow.send("ii.wsyn.play_note(".. ((note)-60)/12 ..", " .. params:get("wsyn_vel") .. ")")
+  end
+  if params:get("twin"..i.."OSC") == 2 then
     osc.send(osc_dest, "/note", {note})
   end
 end
