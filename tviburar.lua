@@ -132,6 +132,8 @@ function init()
   screen_clock = clock.run(redraw_clock)
   lat:start()
   params:bang()
+  params:set("twin1engine", 2)
+  params:set("twin1midi_note", 2)
 end
  
 function init_params()
@@ -151,11 +153,11 @@ function init_params()
   params:add_number("midi_cc_2","cc twin 2",0,127,15)
   for i=1,2 do
     params:add_separator("twin "..i.." outputs")
-    params:add_option("twin"..i.."engine", "twin"..i.." -> engine", {"no", "yes"}, 2)
-    params:add_option("twin"..i.."midi_note", "twin"..i.." -> midi note", {"no", "yes"}, 2)
+    params:add_option("twin"..i.."engine", "twin"..i.." -> engine", {"no", "yes"}, 1)
+    params:add_option("twin"..i.."midi_note", "twin"..i.." -> midi note", {"no", "yes"}, 1)
     params:set_action("twin"..i.."midi_note", function(x)
       for j=0,127 do
-        m[j]:note_off(i,100,params:get("midi_ch_1"))
+        m[i]:note_off(i,100,params:get("midi_ch_1"))
         m[i]:note_off(i,100,params:get("midi_ch_2"))
       end
     end)
