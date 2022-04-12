@@ -21,7 +21,7 @@
 
 local lattice = require("lattice")
 local music = require("musicutil")
-local polysub = include 'we/lib/polysub'
+local polysub = require("polysub")
 engine.name = "PolySub"
 
 local m = {midi.connect(1), midi.connect(1)}
